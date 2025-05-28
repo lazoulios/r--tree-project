@@ -163,7 +163,7 @@ public class Main {
 
                     queryMBR = new MBR(boundsList);
                     startTime = System.nanoTime();
-                    queryResults = RangeQuery.rangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
+                    queryResults = BestRangeQuery.rangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
                     endTime = System.nanoTime();
                     duration_in_ms = (endTime - startTime) / 1000000.0;
 
@@ -234,7 +234,7 @@ public class Main {
                     }
                     // Run k-NN query
                     startTime = System.nanoTime();
-                    queryResults = NearestNeighboursQuery.getNearestNeighbours(queryPoint2, k2);
+                    queryResults = BestNearestNeighboursQuery.getNearestNeighbours(queryPoint2, k2);
                     endTime = System.nanoTime();
 
                     double duration2 = (endTime - startTime) / 1_000_000.0;
@@ -280,7 +280,7 @@ public class Main {
 
                     startTime = System.nanoTime();
 
-                    ArrayList<Record> skylineResults = OptimalSkylineQuery.computeSkyline();
+                    ArrayList<Record> skylineResults = BestSkylineQuery.computeSkyline();
 
                      endTime = System.nanoTime();
                     double durationInMs = (endTime - startTime) / 1_000_000.0;

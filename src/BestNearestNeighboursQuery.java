@@ -4,13 +4,13 @@ import java.util.*;
 
 // Class used for executing a k-nearest neighbours query of a specific search point with the use of the RStarTree
 // Finds the k closest records of that search point
-class NearestNeighboursQuery extends Query {
+class BestNearestNeighboursQuery extends Query {
     private ArrayList<Double> searchPoint; // The coordinates of point used for radius queries
     private double searchPointRadius; // The reference radius that is used as a bound
     private int k; // The number of nearest neighbours to be found
     private PriorityQueue<RecordDistancePair> nearestNeighbours; // Using a max heap for the nearest neighbours
 
-    NearestNeighboursQuery(ArrayList<Double> searchPoint, int k) {
+    BestNearestNeighboursQuery(ArrayList<Double> searchPoint, int k) {
         if (k < 0)
             throw new IllegalArgumentException("Parameter 'k' for the nearest neighbours must be a positive integer.");
         this.searchPoint = searchPoint;
@@ -35,7 +35,7 @@ class NearestNeighboursQuery extends Query {
     }
 
     static ArrayList<Record> getNearestNeighbours(ArrayList<Double> searchPoint, int k){
-        NearestNeighboursQuery query = new NearestNeighboursQuery(searchPoint,k);
+        BestNearestNeighboursQuery query = new BestNearestNeighboursQuery(searchPoint,k);
         return query.getQueryRecord(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()));
     }
 
