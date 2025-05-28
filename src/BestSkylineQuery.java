@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class OptimalSkylineQuery {
+public class BestSkylineQuery {
      public static ArrayList<Record> computeSkyline(){
          ArrayList<Record> skyline = new ArrayList<>();
 

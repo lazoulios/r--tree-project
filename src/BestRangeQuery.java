@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class RangeQuery {
+public class BestRangeQuery {
 
     /**
      * Executes a range query using the R*-Tree structure recursively.
