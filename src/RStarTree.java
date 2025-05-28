@@ -14,7 +14,7 @@ public class RStarTree {
     RStarTree(boolean doBulkLoad) {
         this.totalLevels = FilesHandler.getTotalLevelsFile();
         if (doBulkLoad) {
-            ArrayList<RecordBlockPairID> allRecordsPairs = new ArrayList<>();
+            List<RecordBlockPairID> allRecordsPairs = new ArrayList<>();
             int totalBlocks = FilesHandler.getTotalBlocksInDataFile();
 
             for (int i = 1; i < totalBlocks; i++) {
@@ -28,7 +28,10 @@ public class RStarTree {
                 }
             }
 
-            bulkLoadFromRecords(allRecordsPairs);
+            bulkLoad(allRecordsPairs);
+            printTreeStats();
+            FilesHandler.flushIndexBufferToDisk();
+            System.out.println("✅ Total levels after bulk-load: " + totalLevels);
         } else {
             Node root = new Node(1);
             FilesHandler.writeNewIndexFileBlock(root);
@@ -419,9 +422,6 @@ public class RStarTree {
         return null;
     }
 
-
-
-
     public static void printTreeStats() {
         Node root = FilesHandler.readIndexFileBlock(RStarTree.getRootNodeBlockId());
         Map<Integer, Integer> levelNodeCounts = new HashMap<>();
@@ -453,73 +453,59 @@ public class RStarTree {
             }
         }
     }
-    private ArrayList<Node> buildLeafNodesSTR(ArrayList<LeafEntry> entries, int M) {
-        entries.sort(Comparator.comparingDouble(e -> e.getBoundingBox().getCenter().get(0)));
-        int sliceCount = (int)Math.ceil(Math.sqrt(entries.size()));
-        int sliceSize = (int)Math.ceil((double) entries.size() / sliceCount);
 
-        ArrayList<Node> leaves = new ArrayList<>();
-        for (int i = 0; i < entries.size(); i += sliceSize) {
-            List<LeafEntry> slice = entries.subList(i, Math.min(i + sliceSize, entries.size()));
-            slice.sort(Comparator.comparingDouble(e -> e.getBoundingBox().getCenter().get(1)));
-            for (int j = 0; j < slice.size(); j += M) {
-                List<LeafEntry> group = slice.subList(j, Math.min(j + M, slice.size()));
-                Node leaf = new Node(LEAF_LEVEL, new ArrayList<>(group));
-                leaf.setNodeBlockId(FilesHandler.getTotalBlocksInIndexFile());
-                FilesHandler.writeNewIndexFileBlock(leaf);
-                leaves.add(leaf);
+    private List<Node> recursiveSort(List<RecordBlockPairID> input, int dim, int level) {
+        int maxEntries = Node.getMaxEntriesInNode();
+        int dims = FilesHandler.getDataDimensions();
+
+        if (input.size() <= maxEntries) {
+            ArrayList<Entry> entries = new ArrayList<>();
+            for (RecordBlockPairID pair : input) {
+                MBR mbr = new MBR(pair.getRecord());
+                entries.add(new Entry(mbr));
             }
+            Node node = new Node(level, entries);
+            FilesHandler.writeNewIndexFileBlock(node);
+            return List.of(node);
         }
-        return leaves;
+
+        int sliceSize = (int) Math.ceil(Math.pow(input.size(), 1.0 / dims));
+        input.sort(Comparator.comparingDouble(o -> o.getRecord().getCoordinates().get(dim)));
+        List<Node> result = new ArrayList<>();
+        for (int i = 0; i < input.size(); i += sliceSize) {
+            int end = Math.min(i + sliceSize, input.size());
+            List<RecordBlockPairID> slice = input.subList(i, end);
+            int nextDim = (dim + 1) % dims;
+            result.addAll(recursiveSort(slice, nextDim, level));
+        }
+        return result;
     }
 
-    private Node buildTreeBottomUp(ArrayList<Node> children, int M) {
-        int currentLevel = LEAF_LEVEL;
-        while (children.size() > 1) {
-            ArrayList<Node> newLevelNodes = new ArrayList<>();
-            children.sort(Comparator.comparingDouble(n -> n.getMBR().getCenter().get(0)));
-            int sliceCount = (int)Math.ceil(Math.sqrt(children.size()));
-            int sliceSize = (int)Math.ceil((double) children.size() / sliceCount);
+    public void bulkLoad(List<RecordBlockPairID> records) {
+        int maxEntries = Node.getMaxEntriesInNode();
+        List<Node> leafNodes = recursiveSort(records, 0, 1);
 
-            for (int i = 0; i < children.size(); i += sliceSize) {
-                List<Node> slice = children.subList(i, Math.min(i + sliceSize, children.size()));
-                slice.sort(Comparator.comparingDouble(n -> n.getMBR().getCenter().get(1)));
-                for (int j = 0; j < slice.size(); j += M) {
-                    List<Node> group = slice.subList(j, Math.min(j + M, slice.size()));
-                    ArrayList<Entry> entries = new ArrayList<>();
-                    for (Node child : group) {
-                        entries.add(new Entry(child));
-                    }
-                    Node parent = new Node(currentLevel + 1, entries);
-                    parent.setNodeBlockId(FilesHandler.getTotalBlocksInIndexFile());
-                    FilesHandler.writeNewIndexFileBlock(parent);
-                    newLevelNodes.add(parent);
+        while (leafNodes.size() > 1) {
+            List<RecordBlockPairID> parentLevel = new ArrayList<>();
+            for (int i = 0; i < leafNodes.size(); i += maxEntries) {
+                int end = Math.min(i + maxEntries, leafNodes.size());
+                List<Node> group = leafNodes.subList(i, end);
+                ArrayList<Entry> entries = new ArrayList<>();
+                for (Node child : group) {
+                    Entry entry = new Entry(child.getMBR());
+                    entry.setChildNodeBlockId(child.getNodeBlockId());
+                    entries.add(entry);
                 }
+                Node parent = new Node(group.get(0).getNodeLevelInTree() + 1, entries);
+                FilesHandler.writeNewIndexFileBlock(parent);
+                parentLevel.add(new RecordBlockPairID(null, parent.getNodeBlockId()));
             }
-
-            children = newLevelNodes;
-            currentLevel++;
+            leafNodes = recursiveSort(parentLevel, 0, leafNodes.get(0).getNodeLevelInTree() + 1);
         }
-        return children.get(0); // Single root node
-    }
 
-    public void bulkLoadFromRecords(ArrayList<RecordBlockPairID> recordPairs) {
-        ArrayList<LeafEntry> leafEntries = new ArrayList<>();
-        for (RecordBlockPairID pair : recordPairs) {
-            Record record = pair.getRecord();
-            long blockID = pair.getBlockID();
-
-            ArrayList<Bounds> boundsForDimensions = new ArrayList<>();
-            for (int i = 0; i < FilesHandler.getDataDimensions(); i++) {
-                boundsForDimensions.add(new Bounds(record.getCoordinateFromDimension(i), record.getCoordinateFromDimension(i)));
-            }
-            MBR mbr = new MBR(boundsForDimensions);
-            leafEntries.add(new LeafEntry(blockID, mbr));
-        }
-        ArrayList<Node> leaves = buildLeafNodesSTR(leafEntries, Node.getMaxEntriesInNode());
-        Node root = buildTreeBottomUp(leaves, Node.getMaxEntriesInNode());
-        root.setNodeBlockId(ROOT_NODE_BLOCK_ID);
-        totalLevels = root.getNodeLevelInTree();
+        Node root = leafNodes.get(0);
+        this.totalLevels = root.getNodeLevelInTree();
+        root.setNodeBlockId(RStarTree.getRootNodeBlockId());
         FilesHandler.writeNewIndexFileBlock(root);
     }
 }

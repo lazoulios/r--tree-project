@@ -1,5 +1,6 @@
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
@@ -11,10 +12,22 @@ class MBR implements Serializable {
     private Double margin; // The total margin (perimeter) that the BoundingBox takes
     private ArrayList<Double> center; // Represents te coordinates of the point that represents the center of the bounding box
 
-    MBR(ArrayList<Bounds> bounds) {
+    public MBR(ArrayList<Bounds> bounds) {
         this.bounds = bounds;
         this.area = calculateArea();
         this.margin = calculateMargin();
+        this.center = getCenter();
+    }
+
+    public MBR(Record record) {
+        ArrayList<Double> coords = record.getCoordinates();
+        ArrayList<Bounds> boundsList = new ArrayList<>();
+        for (double coord : coords) {
+            boundsList.add(new Bounds(coord, coord));
+        }
+        this.bounds = boundsList;
+        this.area = calculateArea();
+        this.margin = calculateArea();
         this.center = getCenter();
     }
 
