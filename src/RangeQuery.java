@@ -9,7 +9,7 @@ public class RangeQuery {
     public static ArrayList<Record> rangeQuery(Node node, MBR queryMBR) {
         ArrayList<Record> results = new ArrayList<>();
 
-        int dimensions = FilesHandler.getDataDimensions();
+        int dimensions = FilesManager.getDataDimensions();
         double[] minCoor = new double[dimensions];
         double[] maxCoor = new double[dimensions];
 
@@ -28,7 +28,7 @@ public class RangeQuery {
             if (MBR.checkOverlap(entryMBR, queryMBR)) {
                 if (node.getNodeLevelInTree() == RStarTree.getLeafLevel()) {
                     // Leaf node → entry points to a data block
-                    ArrayList<Record> records = FilesHandler.readDataFileBlock(entry.getChildNodeBlockId());
+                    ArrayList<Record> records = FilesManager.readDataFileBlock(entry.getChildNodeBlockId());
                     if (records != null) {
                         for (Record record : records) {
                             if (isRecordInRange(record, minCoor, maxCoor)) {
@@ -38,7 +38,7 @@ public class RangeQuery {
                     }
                 } else {
                     // Internal node → go deeper
-                    Node childNode = FilesHandler.readIndexFileBlock(entry.getChildNodeBlockId());
+                    Node childNode = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
                     if (childNode != null) {
                         results.addAll(rangeQuery(childNode, queryMBR));
                     }

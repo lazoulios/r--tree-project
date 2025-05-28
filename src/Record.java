@@ -13,10 +13,10 @@ public class Record implements Serializable{
         this.coor = coor;
     }
     public Record(String recordInString) {
-        String[] stringArray = recordInString.split(FilesHandler.getDelimiter());
+        String[] stringArray = recordInString.split(FilesManager.getDelimiter());
 
         // Expecting: ID + name + coordinates
-        if (stringArray.length != FilesHandler.getDataDimensions() + 2)
+        if (stringArray.length != FilesManager.getDataDimensions() + 2)
             throw new IllegalArgumentException("Record input string is not correct: " + recordInString);
 
         recordID = Long.parseLong(stringArray[0]);

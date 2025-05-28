@@ -1,8 +1,7 @@
 import  java.util.ArrayList;
-import java.util.List;
 
 
-public class LinearRangeQuery {
+public class WorstRangeQuery {
 
     //Checks if the coordinates are in between the min and max in any dimensions
     private static boolean inRange(ArrayList<Double> coords, double[] minCoor, double[] maxCoor) {
@@ -18,10 +17,10 @@ public class LinearRangeQuery {
     public static ArrayList<Record> runLinearRangeQuery(MBR queryMBR){
         ArrayList<Record> results = new ArrayList<>();
 
-        int totalBlocks = FilesHandler.getTotalBlocksInDataFile();
+        int totalBlocks = FilesManager.getTotalBlocksInDataFile();
         ArrayList<Bounds> boundsList = queryMBR.getBounds();
 
-        int dimensions = FilesHandler.getDataDimensions();
+        int dimensions = FilesManager.getDataDimensions();
         double[] minCoor = new double[dimensions];
         double[] maxCoor = new double[dimensions];
 
@@ -32,7 +31,7 @@ public class LinearRangeQuery {
         }
 
         for(int blockId=1; blockId<totalBlocks; blockId++){
-            ArrayList<Record> records = FilesHandler.readDataFileBlock(blockId);
+            ArrayList<Record> records = FilesManager.readDataFileBlock(blockId);
             if(records == null) continue;
 
             for(Record rec : records){

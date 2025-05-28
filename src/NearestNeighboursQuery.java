@@ -36,7 +36,7 @@ class NearestNeighboursQuery extends Query {
 
     static ArrayList<Record> getNearestNeighbours(ArrayList<Double> searchPoint, int k){
         NearestNeighboursQuery query = new NearestNeighboursQuery(searchPoint,k);
-        return query.getQueryRecord(FilesHandler.readIndexFileBlock(RStarTree.getRootNodeBlockId()));
+        return query.getQueryRecord(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()));
     }
 
 
@@ -60,11 +60,11 @@ class NearestNeighboursQuery extends Query {
             if (nearestNeighbours.size() == k && minDistance >= searchPointRadius) continue;
 
 
-            Node childNode = FilesHandler.readIndexFileBlock(entry.getChildNodeBlockId());
+            Node childNode = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
             if (childNode == null) continue;
 
             if (childNode.getNodeLevelInTree() == RStarTree.getLeafLevel()){
-                ArrayList<Record> records = FilesHandler.readDataFileBlock(entry.getChildNodeBlockId());
+                ArrayList<Record> records = FilesManager.readDataFileBlock(entry.getChildNodeBlockId());
                 if (records != null){
                     for (Record record : records) {
                         double distance = calculateEuclideanDistance(record.getCoordinates(), searchPoint);
@@ -90,7 +90,7 @@ class NearestNeighboursQuery extends Query {
                 /*if (nearestNeighbours.size() >= k)
                     nearestNeighbours.poll();
                 double minDistance = leafEntry.getBoundingBox().findMinDistanceFromPoint(searchPoint);
-                nearestNeighbours.add(new RecordDistancePair(FilesHandler.readDataFileBlock(leafEntry.getDataBlockId()), minDistance));
+                nearestNeighbours.add(new RecordDistancePair(FilesManager.readDataFileBlock(leafEntry.getDataBlockId()), minDistance));
                 searchPointRadius = nearestNeighbours.peek().getDistance();
                 i++;*/
             }

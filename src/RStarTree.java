@@ -12,13 +12,13 @@ public class RStarTree {
     private static final Map<Long, Long> recordToLeafMap = new HashMap<>();
 
     RStarTree(boolean doBulkLoad) {
-        this.totalLevels = FilesHandler.getTotalLevelsFile();
+        this.totalLevels = FilesManager.getTotalLevelsFile();
         if (doBulkLoad) {
             List<RecordBlockPairID> allRecordsPairs = new ArrayList<>();
-            int totalBlocks = FilesHandler.getTotalBlocksInDataFile();
+            int totalBlocks = FilesManager.getTotalBlocksInDataFile();
 
             for (int i = 1; i < totalBlocks; i++) {
-                ArrayList<Record> blockRecords = FilesHandler.readDataFileBlock(i);
+                ArrayList<Record> blockRecords = FilesManager.readDataFileBlock(i);
                 if (blockRecords != null) {
                     for (Record record : blockRecords) {
                         allRecordsPairs.add(new RecordBlockPairID(record, i));
@@ -30,13 +30,13 @@ public class RStarTree {
 
             bulkLoad(allRecordsPairs);
             printTreeStats();
-            FilesHandler.flushIndexBufferToDisk();
+            FilesManager.flushIndexBufferToDisk();
             System.out.println("✅ Total levels after bulk-load: " + totalLevels);
         } else {
             Node root = new Node(1);
-            FilesHandler.writeNewIndexFileBlock(root);
-            for (int i = 1; i < FilesHandler.getTotalBlocksInDataFile(); i++) {
-                ArrayList<Record> records = FilesHandler.readDataFileBlock(i);
+            FilesManager.writeNewIndexFileBlock(root);
+            for (int i = 1; i < FilesManager.getTotalBlocksInDataFile(); i++) {
+                ArrayList<Record> records = FilesManager.readDataFileBlock(i);
                 if (records != null) {
                     insertDataBlock(records,i);
                 } else {
@@ -44,14 +44,14 @@ public class RStarTree {
                 }
             }
             printTreeStats();
-            FilesHandler.flushIndexBufferToDisk();
+            FilesManager.flushIndexBufferToDisk();
 
             System.out.println("✅ Total levels after insertion: " + totalLevels);
         }
     }
 
     Node getRootNode() {
-        return FilesHandler.readIndexFileBlock(ROOT_NODE_BLOCK_ID);
+        return FilesManager.readIndexFileBlock(ROOT_NODE_BLOCK_ID);
     }
 
     static int getRootNodeBlockId() {
@@ -79,10 +79,10 @@ public class RStarTree {
 
         if (parentEntry != null) {
             parentEntry.adjustBBToFitEntry(dataEntry);
-            FilesHandler.updateIndexFileBlock(parentNode, totalLevels);
+            FilesManager.updateIndexFileBlock(parentNode, totalLevels);
         }
 
-        Node childNode = FilesHandler.readIndexFileBlock(nodeBlockId);
+        Node childNode = FilesManager.readIndexFileBlock(nodeBlockId);
         if (childNode == null) {
             throw new IllegalStateException("Node-block is null");
         }
@@ -97,7 +97,7 @@ public class RStarTree {
 
         if (childNode.getNodeLevelInTree() == levelToAdd) {
             childNode.insertEntry(dataEntry);
-            FilesHandler.updateIndexFileBlock(childNode, totalLevels);
+            FilesManager.updateIndexFileBlock(childNode, totalLevels);
         } else {
             Entry bestEntry = chooseSubTree(childNode, dataEntry.getBoundingBox(), levelToAdd);
             Entry newEntry = insert(childNode, bestEntry, dataEntry, levelToAdd);
@@ -106,7 +106,7 @@ public class RStarTree {
                 childNode.insertEntry(newEntry);
             }
 
-            FilesHandler.updateIndexFileBlock(childNode, totalLevels);
+            FilesManager.updateIndexFileBlock(childNode, totalLevels);
 
             if (childNode.getEntries().size() <= Node.getMaxEntriesInNode()) {
                 return null;
@@ -181,19 +181,19 @@ public class RStarTree {
         childNode.setEntries(leftNode.getEntries());
 
         if (childNode.getNodeBlockId() != ROOT_NODE_BLOCK_ID) {
-            FilesHandler.updateIndexFileBlock(childNode, totalLevels);
-            rightNode.setNodeBlockId(FilesHandler.getTotalBlocksInIndexFile());
-            FilesHandler.writeNewIndexFileBlock(rightNode);
+            FilesManager.updateIndexFileBlock(childNode, totalLevels);
+            rightNode.setNodeBlockId(FilesManager.getTotalBlocksInIndexFile());
+            FilesManager.writeNewIndexFileBlock(rightNode);
             parentEntry.adjustBBToFitEntries(childNode.getEntries());
-            FilesHandler.updateIndexFileBlock(parentNode, totalLevels);
+            FilesManager.updateIndexFileBlock(parentNode, totalLevels);
             return new Entry(rightNode);
         }
 
-        childNode.setNodeBlockId(FilesHandler.getTotalBlocksInIndexFile());
-        FilesHandler.writeNewIndexFileBlock(childNode);
+        childNode.setNodeBlockId(FilesManager.getTotalBlocksInIndexFile());
+        FilesManager.writeNewIndexFileBlock(childNode);
 
-        rightNode.setNodeBlockId(FilesHandler.getTotalBlocksInIndexFile());
-        FilesHandler.writeNewIndexFileBlock(rightNode);
+        rightNode.setNodeBlockId(FilesManager.getTotalBlocksInIndexFile());
+        FilesManager.writeNewIndexFileBlock(rightNode);
 
         ArrayList<Entry> newRootEntries = new ArrayList<>();
         newRootEntries.add(new Entry(childNode));
@@ -201,8 +201,8 @@ public class RStarTree {
 
         Node newRoot = new Node(childNode.getNodeLevelInTree()+1, newRootEntries);
         newRoot.setNodeBlockId(ROOT_NODE_BLOCK_ID);
-        FilesHandler.setLevelsOfTreeIndex(++totalLevels);
-        FilesHandler.updateIndexFileBlock(newRoot, totalLevels);
+        FilesManager.setLevelsOfTreeIndex(++totalLevels);
+        FilesManager.updateIndexFileBlock(newRoot, totalLevels);
         System.out.println("newRootCreated at level: " + totalLevels);
 
         return null;
@@ -225,8 +225,8 @@ public class RStarTree {
         childNode.getEntries().subList(start, totalEntries).clear();
 
         parentEntry.adjustBBToFitEntries(childNode.getEntries());
-        FilesHandler.updateIndexFileBlock(parentNode, totalLevels);
-        FilesHandler.updateIndexFileBlock(childNode, totalLevels);
+        FilesManager.updateIndexFileBlock(parentNode, totalLevels);
+        FilesManager.updateIndexFileBlock(childNode, totalLevels);
 
         Queue<Entry> reinsertQueue = new LinkedList<>(removedEntries);
         while (!reinsertQueue.isEmpty()) {
@@ -240,8 +240,8 @@ public class RStarTree {
         block.add(record);
 
         // Γράφουμε νέο block στο τέλος του datafile
-        FilesHandler.writeDataFileBlock(block);
-        long newBlockId = FilesHandler.getTotalBlocksInDataFile() - 1;
+        FilesManager.writeDataFileBlock(block);
+        long newBlockId = FilesManager.getTotalBlocksInDataFile() - 1;
 
         // Δημιουργούμε MBR μόνο για το νέο record
         ArrayList<Bounds> boundsList = new ArrayList<>();
@@ -286,13 +286,13 @@ public class RStarTree {
 
         if (removed) {
             System.out.println("✅ LeafEntry removed from index.");
-            FilesHandler.updateIndexFileBlock(leafNode, FilesHandler.getTotalLevelsFile());
+            FilesManager.updateIndexFileBlock(leafNode, FilesManager.getTotalLevelsFile());
         } else {
             System.out.println("⚠️ No matching LeafEntry found in node.");
         }
 
         // Διαγραφή της εγγραφής από το datafile
-        FilesHandler.deleteRecordFromDataBlock(record);
+        FilesManager.deleteRecordFromDataBlock(record);
 
         // Optional: Reinsertion of remaining entries from the same block if underflow
         if (leafNode.getEntries().size() < Node.getMinEntriesInNode()) {
@@ -325,7 +325,7 @@ public class RStarTree {
         }
 
         for (Entry entry : node.getEntries()) {
-            Node child = FilesHandler.readIndexFileBlock(entry.getChildNodeBlockId());
+            Node child = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
             if (child == null) continue;
             Node result = searchLeafRecursive(child, dataBlockId);
             if (result != null) return result;
@@ -360,8 +360,8 @@ public class RStarTree {
                 parentEntry.adjustBBToFitEntries(current.getEntries());
             }
 
-            FilesHandler.updateIndexFileBlock(current, totalLevels);
-            FilesHandler.updateIndexFileBlock(parent, totalLevels);
+            FilesManager.updateIndexFileBlock(current, totalLevels);
+            FilesManager.updateIndexFileBlock(parent, totalLevels);
             current = parent;
         }
 
@@ -369,10 +369,10 @@ public class RStarTree {
         Node root = getRootNode();
         if (root.getEntries().size() == 1 && root.getNodeLevelInTree() > LEAF_LEVEL) {
             Entry onlyEntry = root.getEntries().get(0);
-            Node newRoot = FilesHandler.readIndexFileBlock(onlyEntry.getChildNodeBlockId());
+            Node newRoot = FilesManager.readIndexFileBlock(onlyEntry.getChildNodeBlockId());
             newRoot.setNodeBlockId(ROOT_NODE_BLOCK_ID);
-            FilesHandler.setLevelsOfTreeIndex(--totalLevels);
-            FilesHandler.updateIndexFileBlock(newRoot, totalLevels);
+            FilesManager.setLevelsOfTreeIndex(--totalLevels);
+            FilesManager.updateIndexFileBlock(newRoot, totalLevels);
             System.out.println("🗜️ Συμπίεση ρίζας: Νέο ύψος " + totalLevels);
         }
 
@@ -383,7 +383,7 @@ public class RStarTree {
                 if (e instanceof LeafEntry) {
                     level = LEAF_LEVEL;
                 } else {
-                    Node child = FilesHandler.readIndexFileBlock(e.getChildNodeBlockId());
+                    Node child = FilesManager.readIndexFileBlock(e.getChildNodeBlockId());
                     if (child == null) {
                         System.out.println("⚠️ Couldn't reinsert entry: child node not found.");
                         continue;
@@ -406,7 +406,7 @@ public class RStarTree {
 
         for (Entry entry : current.getEntries()) {
             if (entry.getChildNodeBlockId() == childId) return current;
-            Node next = FilesHandler.readIndexFileBlock(entry.getChildNodeBlockId());
+            Node next = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
             if (next != null) {
                 Node result = searchParentRecursive(next, childId);
                 if (result != null) return result;
@@ -423,7 +423,7 @@ public class RStarTree {
     }
 
     public static void printTreeStats() {
-        Node root = FilesHandler.readIndexFileBlock(RStarTree.getRootNodeBlockId());
+        Node root = FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId());
         Map<Integer, Integer> levelNodeCounts = new HashMap<>();
         traverseAndCount(root, levelNodeCounts);
 
@@ -434,7 +434,7 @@ public class RStarTree {
                     int level = entry.getKey();
                     int count = entry.getValue();
                     String label = (level == RStarTree.getLeafLevel()) ? "Leaf" :
-                            (level == FilesHandler.getTotalLevelsFile()) ? "Root" : "Internal";
+                            (level == FilesManager.getTotalLevelsFile()) ? "Root" : "Internal";
                     System.out.printf("Level %d (%s): %d node(s)%n", level, label, count);
                 });
     }
@@ -446,7 +446,7 @@ public class RStarTree {
         // Αν δεν είναι φύλλο, συνέχισε προς τα κάτω
         if (level > RStarTree.getLeafLevel()) {
             for (Entry entry : node.getEntries()) {
-                Node child = FilesHandler.readIndexFileBlock(entry.getChildNodeBlockId());
+                Node child = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
                 if (child != null) {
                     traverseAndCount(child, levelNodeCounts);
                 }
@@ -456,7 +456,7 @@ public class RStarTree {
 
     private List<Node> recursiveSort(List<RecordBlockPairID> input, int dim, int level) {
         int maxEntries = Node.getMaxEntriesInNode();
-        int dims = FilesHandler.getDataDimensions();
+        int dims = FilesManager.getDataDimensions();
 
         if (input.size() <= maxEntries) {
             ArrayList<Entry> entries = new ArrayList<>();
@@ -465,7 +465,7 @@ public class RStarTree {
                 entries.add(new Entry(mbr));
             }
             Node node = new Node(level, entries);
-            FilesHandler.writeNewIndexFileBlock(node);
+            FilesManager.writeNewIndexFileBlock(node);
             return List.of(node);
         }
 
@@ -497,7 +497,7 @@ public class RStarTree {
                     entries.add(entry);
                 }
                 Node parent = new Node(group.get(0).getNodeLevelInTree() + 1, entries);
-                FilesHandler.writeNewIndexFileBlock(parent);
+                FilesManager.writeNewIndexFileBlock(parent);
                 parentLevel.add(new RecordBlockPairID(null, parent.getNodeBlockId()));
             }
             leafNodes = recursiveSort(parentLevel, 0, leafNodes.get(0).getNodeLevelInTree() + 1);
@@ -506,7 +506,7 @@ public class RStarTree {
         Node root = leafNodes.get(0);
         this.totalLevels = root.getNodeLevelInTree();
         root.setNodeBlockId(RStarTree.getRootNodeBlockId());
-        FilesHandler.writeNewIndexFileBlock(root);
+        FilesManager.writeNewIndexFileBlock(root);
     }
 }
 

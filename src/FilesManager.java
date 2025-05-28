@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-class FilesHandler {
+class FilesManager {
     private static final String DELIMITER = ",";
     private static final String PATH_TO_CSV = "src/resources/data.csv";
     static final String PATH_TO_DATAFILE = "src/resources/datafile.dat";
@@ -175,11 +175,11 @@ class FilesHandler {
                 ArrayList<Integer> dataFileMetaData = readMetaDataBlock(PATH_TO_DATAFILE);
                 if (dataFileMetaData == null)
                     throw new Exception("Could not read datafile's MetaData block");
-                FilesHandler.dataDimensions = dataFileMetaData.get(0);
+                FilesManager.dataDimensions = dataFileMetaData.get(0);
                 totalBlocksInDataFile = dataFileMetaData.get(2);
             } else {
                 Files.deleteIfExists(Paths.get(PATH_TO_DATAFILE));
-                FilesHandler.dataDimensions = dataDimensions;
+                FilesManager.dataDimensions = dataDimensions;
                 totalBlocksInDataFile = 1;
                 updateMetaDataBlock(PATH_TO_DATAFILE);
                 ArrayList<Record> blockRecords = new ArrayList<>();
@@ -216,12 +216,12 @@ class FilesHandler {
         try {
             if (!newFile && Files.exists(Paths.get(PATH_TO_INDEXFILE))) {
                 ArrayList<Integer> indexFileMetaData = readMetaDataBlock(PATH_TO_INDEXFILE);
-                FilesHandler.dataDimensions = indexFileMetaData.get(0);
+                FilesManager.dataDimensions = indexFileMetaData.get(0);
                 totalBlocksInIndexFile = indexFileMetaData.get(2);
                 totalLevelsOfTreeIndex = indexFileMetaData.get(3);
             } else {
                 Files.deleteIfExists(Paths.get(PATH_TO_INDEXFILE));
-                FilesHandler.dataDimensions = dataDimensions;
+                FilesManager.dataDimensions = dataDimensions;
                 totalLevelsOfTreeIndex = 1;
                 totalBlocksInIndexFile = 1;
                 updateMetaDataBlock(PATH_TO_INDEXFILE);
@@ -239,7 +239,7 @@ class FilesHandler {
 
     static void updateIndexFileBlock(Node node, int totalLevelsOfTreeIndex) {
         indexBuffer.put(node.getNodeBlockId(), node);
-        FilesHandler.totalLevelsOfTreeIndex = totalLevelsOfTreeIndex;
+        FilesManager.totalLevelsOfTreeIndex = totalLevelsOfTreeIndex;
     }
 
     static Node readIndexFileBlock(long blockId) {
@@ -295,7 +295,7 @@ class FilesHandler {
 
 
     static void setLevelsOfTreeIndex(int totalLevelsOfTreeIndex) {
-        FilesHandler.totalLevelsOfTreeIndex = totalLevelsOfTreeIndex;
+        FilesManager.totalLevelsOfTreeIndex = totalLevelsOfTreeIndex;
         updateMetaDataBlock(PATH_TO_INDEXFILE);
     }
 

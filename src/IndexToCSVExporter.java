@@ -8,7 +8,7 @@ public class IndexToCSVExporter {
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFilePath))) {
             writer.println("nodeBlockId,isLeaf,dataBlockId,boundingBox");
 
-            Node root = FilesHandler.readIndexFileBlock(RStarTree.getRootNodeBlockId());
+            Node root = FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId());
             traverseAndExport(root, writer);
             System.out.println("✅ Export complete: " + outputFilePath);
         } catch (Exception e) {
@@ -47,7 +47,7 @@ public class IndexToCSVExporter {
 
             // recursive traversal
             if (!isLeaf && entry.getChildNodeBlockId() != -1) {
-                Node child = FilesHandler.readIndexFileBlock(entry.getChildNodeBlockId());
+                Node child = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
                 traverseAndExport(child, writer);
             }
         }

@@ -5,17 +5,14 @@ import java.util.PriorityQueue;
 
 // Class used for executing a k-nearest neighbours query of a specific search point without any use of an index
 // Finds the k closest records of that search point
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.PriorityQueue;
 
-class LinearNearestNeighboursQuery {
+
+class WorstNearestNeighboursQuery {
     private ArrayList<Double> searchPoint;
     private int k;
     private PriorityQueue<RecordDistancePair> nearestNeighbours;
 
-    LinearNearestNeighboursQuery(ArrayList<Double> searchPoint, int k) {
+    WorstNearestNeighboursQuery(ArrayList<Double> searchPoint, int k) {
         if (k < 0)
             throw new IllegalArgumentException("Parameter 'k' for the nearest neighbours must be a positive integer.");
         this.searchPoint = searchPoint;
@@ -42,9 +39,9 @@ class LinearNearestNeighboursQuery {
     }
 
     private void findNeighbours() {
-        int totalBlocks = FilesHandler.getTotalBlocksInDataFile();
+        int totalBlocks = FilesManager.getTotalBlocksInDataFile();
         for (int blockId = 1; blockId < totalBlocks; blockId++) {
-            ArrayList<Record> recordsInBlock = FilesHandler.readDataFileBlock(blockId);
+            ArrayList<Record> recordsInBlock = FilesManager.readDataFileBlock(blockId);
             if (recordsInBlock == null) continue;
 
             for (Record record : recordsInBlock) {

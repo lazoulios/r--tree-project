@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class LinearSkylineQuery {
+public class WorstSkylineQuery {
 
     public static ArrayList<Record> computeSkyline() {
         ArrayList<Record> skyline = new ArrayList<>();
@@ -10,9 +10,9 @@ public class LinearSkylineQuery {
 
         // Φόρτωσε όλα τα records από το datafile
         ArrayList<Record> allRecords = new ArrayList<>();
-        int totalBlocks = FilesHandler.getTotalBlocksInDataFile();
+        int totalBlocks = FilesManager.getTotalBlocksInDataFile();
         for (int i = 1; i < totalBlocks; i++) { // skip block 0 (metadata)
-            ArrayList<Record> blockRecords = FilesHandler.readDataFileBlock(i);
+            ArrayList<Record> blockRecords = FilesManager.readDataFileBlock(i);
             if (blockRecords != null)
                 allRecords.addAll(blockRecords);
         }

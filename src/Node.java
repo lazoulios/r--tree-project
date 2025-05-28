@@ -52,7 +52,7 @@ class Node implements Serializable {
         if (entries == null || entries.isEmpty()) return null;
 
         ArrayList<Bounds> combinedBounds = new ArrayList<>();
-        int dimensions = FilesHandler.getDataDimensions();
+        int dimensions = FilesManager.getDataDimensions();
 
         MBR firstMBR = entries.get(0).getBoundingBox();
         for (int d = 0; d < dimensions; d++) {
@@ -95,7 +95,7 @@ class Node implements Serializable {
 
         ArrayList<Distribution> splitAxisDistributions = new ArrayList<>(); // for the different distributions
         double splitAxisMarginsSum = Double.MAX_VALUE;
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             ArrayList<Entry> entriesSortedByUpper = new ArrayList<>();
             ArrayList<Entry> entriesSortedByLower = new ArrayList<>();

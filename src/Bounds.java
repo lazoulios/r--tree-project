@@ -32,7 +32,7 @@ class Bounds implements Serializable {
     static ArrayList<Bounds> findMinimumBounds(ArrayList<Entry> entries) {
         ArrayList<Bounds> minimumBounds = new ArrayList<>();
         // For each dimension finds the minimum interval needed for the entries to fit
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             Entry lowerEntry = Collections.min(entries, new EntryComparator.EntryBoundComparator(entries,d,false));
             Entry upperEntry = Collections.max(entries, new EntryComparator.EntryBoundComparator(entries,d,true));
@@ -45,7 +45,7 @@ class Bounds implements Serializable {
     static ArrayList<Bounds> findMinimumBounds(MBR MBRA, MBR MBRB) {
         ArrayList<Bounds> minimumBounds = new ArrayList<>();
         // For each dimension finds the minimum interval needed for the entries to fit
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             double lower = Math.min(MBRA.getBounds().get(d).getLower(), MBRB.getBounds().get(d).getLower());
             double upper = Math.max(MBRA.getBounds().get(d).getUpper(), MBRB.getBounds().get(d).getUpper());
@@ -55,7 +55,7 @@ class Bounds implements Serializable {
     }
 
     public static ArrayList<Bounds> findMinimumBoundsFromRecords(ArrayList<Record> records) {
-        int dimensions = FilesHandler.getDataDimensions();
+        int dimensions = FilesManager.getDataDimensions();
         double[] min = new double[dimensions];
         double[] max = new double[dimensions];
         Arrays.fill(min, Double.POSITIVE_INFINITY);

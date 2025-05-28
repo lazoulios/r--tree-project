@@ -1,6 +1,5 @@
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
@@ -62,7 +61,7 @@ class MBR implements Serializable {
         double minDistance = 0;
         // For every dimension find the minimum distance
         double rd;
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             if(getBounds().get(d).getLower() > point.get(d))
                 rd = getBounds().get(d).getLower();
@@ -82,7 +81,7 @@ class MBR implements Serializable {
         {
             center = new ArrayList<>();
 
-            for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+            for (int d = 0; d < FilesManager.getDataDimensions(); d++)
                 center.add((bounds.get(d).getUpper()+bounds.get(d).getLower())/2);
         }
         return center;
@@ -90,7 +89,7 @@ class MBR implements Serializable {
     // Calculates and returns the margin (perimeter) of this BoundingBox
     private double calculateMargin() {
         double sum = 0;
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
             sum += abs(bounds.get(d).getUpper() - bounds.get(d).getLower());
         return sum;
     }
@@ -98,7 +97,7 @@ class MBR implements Serializable {
     // Calculates and returns the area of this BoundingBox
     private double calculateArea() {
         double productOfEdges = 1;
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
             productOfEdges = productOfEdges * (bounds.get(d).getUpper() - bounds.get(d).getLower());
         return abs(productOfEdges);
     }
@@ -106,7 +105,7 @@ class MBR implements Serializable {
     // Returns true if the two bounding boxes overlap
     static boolean checkOverlap(MBR MBRA, MBR MBRB) {
         // For every dimension find the intersection point
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             double overlapD = Math.min(MBRA.getBounds().get(d).getUpper(), MBRB.getBounds().get(d).getUpper())
                     - Math.max(MBRA.getBounds().get(d).getLower(), MBRB.getBounds().get(d).getLower());
@@ -121,7 +120,7 @@ class MBR implements Serializable {
     static double calculateOverlapValue(MBR MBRA, MBR MBRB) {
         double overlapValue = 1;
         // For every dimension find the intersection point
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             double overlapD = Math.min(MBRA.getBounds().get(d).getUpper(), MBRB.getBounds().get(d).getUpper())
                     - Math.max(MBRA.getBounds().get(d).getLower(), MBRB.getBounds().get(d).getLower());
@@ -138,7 +137,7 @@ class MBR implements Serializable {
     static double findDistanceBetweenBoundingBoxes(MBR MBRA, MBR MBRB) {
         double distance = 0;
         // For every dimension find the intersection point
-        for (int d = 0; d < FilesHandler.getDataDimensions(); d++)
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             distance += Math.pow(MBRA.getCenter().get(d) - MBRB.getCenter().get(d),2);
         }

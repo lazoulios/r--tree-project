@@ -1,19 +1,17 @@
-import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.SQLOutput;
 import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
-        boolean filesExist = Files.exists(Paths.get(FilesHandler.PATH_TO_DATAFILE));
+        boolean filesExist = Files.exists(Paths.get(FilesManager.PATH_TO_DATAFILE));
         boolean resetFiles = false;
 
         Scanner scanner = new Scanner(System.in);
 
         if (filesExist) {
             System.out.println("Data-file and index-file already exist");
-            System.out.print("Do you want to make new ones based on the data of the " + FilesHandler.getPathToCsv() +  " file? (y/n): ");
+            System.out.print("Do you want to make new ones based on the data of the " + FilesManager.getPathToCsv() +  " file? (y/n): ");
             String answer;
             while (true)
             {
@@ -36,14 +34,14 @@ public class Main {
 
         if(!filesExist || resetFiles) {
             insertRecordsFromDataFile = true;
-            System.out.print("Give the dimensions of the spacial data (dimensions need to be the same as the data saved in " + FilesHandler.getPathToCsv() + "): ");
+            System.out.print("Give the dimensions of the spacial data (dimensions need to be the same as the data saved in " + FilesManager.getPathToCsv() + "): ");
             dataDimensions = scanner.nextInt();
             scanner.nextLine();
             System.out.println();
         }
 
-        FilesHandler.initializeDataFile(dataDimensions, resetFiles);
-        FilesHandler.initializeIndexFile(dataDimensions, resetFiles);
+        FilesManager.initializeDataFile(dataDimensions, resetFiles);
+        FilesManager.initializeIndexFile(dataDimensions, resetFiles);
 
         double duration_in_ms;
         long startTime;
@@ -53,14 +51,14 @@ public class Main {
             System.out.println("Building R*Tree index from datafile...");
             System.out.println();
             startTime = System.nanoTime();
-            new RStarTree(false);
+            new RStarTree(true);
             endTime = System.nanoTime();
             duration_in_ms = (endTime - startTime);
             System.out.println();
             System.out.println("R*Tree index built in " +duration_in_ms / 1000000.0 + "ms");
         }
-        ArrayList<Integer> dataMetaData = FilesHandler.getDataMetaData();
-        ArrayList<Integer> indexMetaData = FilesHandler.getIndexMetaData();
+        ArrayList<Integer> dataMetaData = FilesManager.getDataMetaData();
+        ArrayList<Integer> indexMetaData = FilesManager.getIndexMetaData();
 
         System.out.println("Datafile Metadata: [Dimensions: " + dataMetaData.getFirst() +
                 ", Block Size: " + dataMetaData.get(1) +
@@ -103,7 +101,7 @@ public class Main {
 
                     //Runs for more than 2 dimensions if needed
                     boundsList = new ArrayList<>();
-                    dims = FilesHandler.getDataDimensions();
+                    dims = FilesManager.getDataDimensions();
 
                     System.out.println("Give Lower and Upper bounds for the Query MBR for each dimension: ");
                     for (int i = 0; i < dims; i++) {
@@ -123,7 +121,7 @@ public class Main {
 
                     queryMBR = new MBR(boundsList);
                     startTime = System.nanoTime();
-                    queryResults = LinearRangeQuery.runLinearRangeQuery(queryMBR);
+                    queryResults = WorstRangeQuery.runLinearRangeQuery(queryMBR);
                     endTime = System.nanoTime();
                     duration_in_ms = (endTime - startTime) / 1000000.0;
 
@@ -144,7 +142,7 @@ public class Main {
                 case "2":
                     System.out.println("Range Query using R* Tree index Selected(WIP)");
                     boundsList = new ArrayList<>();
-                    dims = FilesHandler.getDataDimensions();
+                    dims = FilesManager.getDataDimensions();
 
 
                     System.out.println("Give Lower and Upper bounds for the Query MBR for each dimension: ");
@@ -165,7 +163,7 @@ public class Main {
 
                     queryMBR = new MBR(boundsList);
                     startTime = System.nanoTime();
-                    queryResults = RangeQuery.rangeQuery(FilesHandler.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
+                    queryResults = RangeQuery.rangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
                     endTime = System.nanoTime();
                     duration_in_ms = (endTime - startTime) / 1000000.0;
 
@@ -189,7 +187,7 @@ public class Main {
                     int k = scanner.nextInt();
                     scanner.nextLine(); // <-- Απαραίτητο!
 
-                    int dimensions = FilesHandler.getDataDimensions();
+                    int dimensions = FilesManager.getDataDimensions();
                     ArrayList<Double> queryPoint = new ArrayList<>();
                     System.out.println("Enter coordinates of the query point (you have " + dimensions + " dimensions):");
                     for (int i = 0; i < dimensions; i++) {
@@ -201,7 +199,7 @@ public class Main {
 
                     // Run k-NN query
                     startTime = System.nanoTime();
-                    LinearNearestNeighboursQuery query = new LinearNearestNeighboursQuery(queryPoint, k);
+                    WorstNearestNeighboursQuery query = new WorstNearestNeighboursQuery(queryPoint, k);
                     queryResults = query.getNearestRecords();
                     endTime = System.nanoTime();
 
@@ -225,7 +223,7 @@ public class Main {
                     System.out.print("Enter value for K: ");
                     int k2 = scanner.nextInt();
                     scanner.nextLine(); // <-- Απαραίτητο!
-                    int dimensions2 = FilesHandler.getDataDimensions();
+                    int dimensions2 = FilesManager.getDataDimensions();
                     ArrayList<Double> queryPoint2 = new ArrayList<>();
                     System.out.println("Enter coordinates of the query point (you have " + dimensions2 + " dimensions):");
                     for (int i = 0; i < dimensions2; i++) {
@@ -259,7 +257,7 @@ public class Main {
                     System.out.println("Linear Skyline Query Selected");
 
                     startTime = System.nanoTime();
-                    queryResults = LinearSkylineQuery.computeSkyline();
+                    queryResults = WorstSkylineQuery.computeSkyline();
                     endTime = System.nanoTime();
 
                     duration_in_ms = (endTime - startTime) / 1_000_000.0;

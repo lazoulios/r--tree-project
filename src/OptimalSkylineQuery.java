@@ -1,5 +1,3 @@
-import java.io.File;
-import java.nio.file.Files;
 import java.util.*;
 
 public class OptimalSkylineQuery {
@@ -7,7 +5,7 @@ public class OptimalSkylineQuery {
          ArrayList<Record> skyline = new ArrayList<>();
 
          long rootBlockID = RStarTree.getRootNodeBlockId();
-         Node root = FilesHandler.readIndexFileBlock(rootBlockID);
+         Node root = FilesManager.readIndexFileBlock(rootBlockID);
 
          if (root==null) return skyline;
 
@@ -22,7 +20,7 @@ public class OptimalSkylineQuery {
 
              if (e instanceof LeafEntry){
                  long recordsID = e.getChildNodeBlockId();
-                 ArrayList<Record> records = FilesHandler.readDataFileBlock(recordsID);
+                 ArrayList<Record> records = FilesManager.readDataFileBlock(recordsID);
                  for (Record r: records){
                      ArrayList<Double> coords = r.getCoordinates();
                      if (!isDominated(coords, skyline)){
@@ -34,7 +32,7 @@ public class OptimalSkylineQuery {
              }
              else {
                  long childBlockID = e.getChildNodeBlockId();
-                 Node childNode = FilesHandler.readIndexFileBlock(childBlockID);
+                 Node childNode = FilesManager.readIndexFileBlock(childBlockID);
                  if (childNode==null) continue;
                  for (Entry child_entry: childNode.getEntries()){
                      queue.add(child_entry);

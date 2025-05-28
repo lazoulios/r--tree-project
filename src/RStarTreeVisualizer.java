@@ -34,7 +34,7 @@ public class RStarTreeVisualizer {
             for (Entry entry : node.getEntries()) {
                 Long childId = entry.getChildNodeBlockId();
                 sb.append(String.format("  n%d -> n%d;\n", node.getNodeBlockId(), childId));
-                Node child = FilesHandler.readIndexFileBlock(childId);
+                Node child = FilesManager.readIndexFileBlock(childId);
                 if (child != null) {
                     traverseAndBuild(child, sb, visited);
                 }
@@ -44,7 +44,7 @@ public class RStarTreeVisualizer {
 
     public static void main(String[] args) {
         RStarTree tree = new RStarTree(false);
-        Node root = FilesHandler.readIndexFileBlock(RStarTree.getRootNodeBlockId());
+        Node root = FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId());
         generateGraphviz(root);
     }
 }
