@@ -163,7 +163,7 @@ public class Main {
 
                     queryMBR = new MBR(boundsList);
                     startTime = System.nanoTime();
-                    queryResults = BestRangeQuery.rangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
+                    queryResults = BestRangeQuery.bestRangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
                     endTime = System.nanoTime();
                     duration_in_ms = (endTime - startTime) / 1000000.0;
 
