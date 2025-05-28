@@ -14,11 +14,11 @@ public class WorstRangeQuery {
     }
 
     //Performs a linear scan of the entire data file
-    public static ArrayList<Record> runLinearRangeQuery(MBR queryMBR){
+    public static ArrayList<Record> runLinearRangeQuery(BoundingBox queryBoundingBox){
         ArrayList<Record> results = new ArrayList<>();
 
         int totalBlocks = FilesManager.getTotalBlocksInDataFile();
-        ArrayList<Bounds> boundsList = queryMBR.getBounds();
+        ArrayList<Bounds> boundsList = queryBoundingBox.getBounds();
 
         int dimensions = FilesManager.getDataDimensions();
         double[] minCoor = new double[dimensions];

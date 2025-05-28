@@ -64,8 +64,8 @@ public class RStarTree {
 
     private void insertDataBlock(ArrayList<Record> records, long datafileBlockId) {
         ArrayList<Bounds> boundsList = Bounds.findMinimumBoundsFromRecords(records);
-        MBR blockMBR = new MBR(boundsList);
-        LeafEntry entry = new LeafEntry(datafileBlockId, blockMBR);
+        BoundingBox blockBoundingBox = new BoundingBox(boundsList);
+        LeafEntry entry = new LeafEntry(datafileBlockId, blockBoundingBox);
         this.levelsInserted = new boolean[totalLevels];
         insert(null, null, entry, LEAF_LEVEL);
         for (Record r : records) {
@@ -122,38 +122,38 @@ public class RStarTree {
         return null;
     }
 
-    private Entry chooseSubTree(Node node, MBR MBRToAdd, int levelToAdd) {
+    private Entry chooseSubTree(Node node, BoundingBox BoundingBoxToAdd, int levelToAdd) {
         ArrayList<Entry> entries = node.getEntries();
         if (node.getNodeLevelInTree() == levelToAdd + 1) {
             if (Node.getMaxEntriesInNode() > (CHOOSE_SUBTREE_LEVEL * 2) / 3 && entries.size() > CHOOSE_SUBTREE_LEVEL) {
-                ArrayList<Entry> topEntries = getTopAreaEnlargementEntries(entries, MBRToAdd, CHOOSE_SUBTREE_LEVEL);
-                return Collections.min(topEntries, new EntryComparator.EntryOverlapEnlargementComparator(topEntries, MBRToAdd, entries));
+                ArrayList<Entry> topEntries = getTopAreaEnlargementEntries(entries, BoundingBoxToAdd, CHOOSE_SUBTREE_LEVEL);
+                return Collections.min(topEntries, new EntryComparator.EntryOverlapEnlargementComparator(topEntries, BoundingBoxToAdd, entries));
             }
-            return Collections.min(entries, new EntryComparator.EntryOverlapEnlargementComparator(entries, MBRToAdd, entries));
+            return Collections.min(entries, new EntryComparator.EntryOverlapEnlargementComparator(entries, BoundingBoxToAdd, entries));
         }
-        return getEntryWithMinAreaEnlargement(entries, MBRToAdd);
+        return getEntryWithMinAreaEnlargement(entries, BoundingBoxToAdd);
     }
 
-    private Entry getEntryWithMinAreaEnlargement(ArrayList<Entry> entries, MBR mbr) {
+    private Entry getEntryWithMinAreaEnlargement(ArrayList<Entry> entries, BoundingBox boundingBox) {
         return Collections.min(
                 entries.stream()
-                        .map(e -> new EntryAreaEnlargementPair(e, computeAreaEnlargement(e, mbr)))
+                        .map(e -> new EntryAreaEnlargementPair(e, computeAreaEnlargement(e, boundingBox)))
                         .toList(),
                 EntryAreaEnlargementPair::compareTo
         ).getEntry();
     }
 
-    private ArrayList<Entry> getTopAreaEnlargementEntries(ArrayList<Entry> entries, MBR MBRToAdd, int p) {
+    private ArrayList<Entry> getTopAreaEnlargementEntries(ArrayList<Entry> entries, BoundingBox BoundingBoxToAdd, int p) {
         return entries.stream()
-                .map(e -> new EntryAreaEnlargementPair(e, computeAreaEnlargement(e, MBRToAdd)))
+                .map(e -> new EntryAreaEnlargementPair(e, computeAreaEnlargement(e, BoundingBoxToAdd)))
                 .sorted()
                 .limit(p)
                 .map(EntryAreaEnlargementPair::getEntry)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private double computeAreaEnlargement(Entry entry, MBR toAdd) {
-        MBR enlarged = new MBR(Bounds.findMinimumBounds(entry.getBoundingBox(), toAdd));
+    private double computeAreaEnlargement(Entry entry, BoundingBox toAdd) {
+        BoundingBox enlarged = new BoundingBox(Bounds.findMinimumBounds(entry.getBoundingBox(), toAdd));
         return enlarged.getArea() - entry.getBoundingBox().getArea();
     }
 
@@ -249,8 +249,8 @@ public class RStarTree {
             double value = record.getCoordinateFromDimension(i);
             boundsList.add(new Bounds(value, value));
         }
-        MBR mbr = new MBR(boundsList);
-        LeafEntry entry = new LeafEntry(newBlockId, mbr);
+        BoundingBox boundingBox = new BoundingBox(boundsList);
+        LeafEntry entry = new LeafEntry(newBlockId, boundingBox);
 
         // Εισαγωγή στο R*-Tree στο φύλλο επίπεδο
         insert(null, null, entry, LEAF_LEVEL);
@@ -461,8 +461,8 @@ public class RStarTree {
         if (input.size() <= maxEntries) {
             ArrayList<Entry> entries = new ArrayList<>();
             for (RecordBlockPairID pair : input) {
-                MBR mbr = new MBR(pair.getRecord());
-                entries.add(new Entry(mbr));
+                BoundingBox boundingBox = new BoundingBox(pair.getRecord());
+                entries.add(new Entry(boundingBox));
             }
             Node node = new Node(level, entries);
             FilesManager.writeNewIndexFileBlock(node);
@@ -492,7 +492,7 @@ public class RStarTree {
                 List<Node> group = leafNodes.subList(i, end);
                 ArrayList<Entry> entries = new ArrayList<>();
                 for (Node child : group) {
-                    Entry entry = new Entry(child.getMBR());
+                    Entry entry = new Entry(child.getBoundingBox());
                     entry.setChildNodeBlockId(child.getNodeBlockId());
                     entries.add(entry);
                 }

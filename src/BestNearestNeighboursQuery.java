@@ -14,9 +14,7 @@ class BestNearestNeighboursQuery extends Query {
         this.searchPoint = searchPoint;
         this.k = k;
         this.searchPointRadius = Double.MAX_VALUE;
-        this.nearestNeighbours = new PriorityQueue<>(k, (recordDistancePairA, recordDistancePairB) -> {
-            return Double.compare(recordDistancePairB.getDistance(), recordDistancePairA.getDistance());
-        });
+        this.nearestNeighbours = new PriorityQueue<>(k, (recordDistancePairA, recordDistancePairB) -> Double.compare(recordDistancePairB.getDistance(), recordDistancePairA.getDistance()));
     }
 
     ArrayList<Record> getQueryRecord(Node node) {
@@ -84,6 +82,15 @@ class BestNearestNeighboursQuery extends Query {
         }
     }
 
+    private double calculateEuclideanDistance(ArrayList<Double> p, ArrayList<Double> q) {
+        double sum = 0;
+        for (int i = 0; i < p.size(); i++) {
+            double diff = p.get(i) - q.get(i);
+            sum += diff * diff;
+        }
+        return Math.sqrt(sum);
+    }
+
     private static class NodeEntryPair {
         Node node;
         Entry entry;
@@ -92,16 +99,6 @@ class BestNearestNeighboursQuery extends Query {
             this.entry = entry;
         }
     }
-
-    //}
-        private double calculateEuclideanDistance(ArrayList<Double> p, ArrayList<Double> q) {
-            double sum = 0;
-            for (int i = 0; i < p.size(); i++) {
-                double diff = p.get(i) - q.get(i);
-                sum += diff * diff;
-            }
-            return Math.sqrt(sum);
-        }
     }
 
 

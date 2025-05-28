@@ -4,21 +4,20 @@ import java.util.ArrayList;
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
 
-// Represents a bounding box in the n-dimensional space
-class MBR implements Serializable {
+class BoundingBox implements Serializable {
     private ArrayList<Bounds> bounds; // Bounds of each dimension
-    private Double area; // Area covered by the mbr
-    private Double margin; // Total perimeter of the mbr
+    private Double area; // Area covered by the bounding box
+    private Double margin; // Total perimeter of the bounding box
     private ArrayList<Double> center; // Centre point coordinates
 
-    public MBR(ArrayList<Bounds> bounds) {
+    public BoundingBox(ArrayList<Bounds> bounds) {
         this.bounds = bounds;
         this.area = calculateArea();
         this.margin = calculateMargin();
         this.center = getCenter();
     }
 
-    public MBR(Record record) {
+    public BoundingBox(Record record) {
         ArrayList<Double> coords = record.getCoordinates();
         ArrayList<Bounds> boundsList = new ArrayList<>();
         for (double coord : coords) {
@@ -34,8 +33,21 @@ class MBR implements Serializable {
         return bounds;
     }
 
+    private double calculateMargin() {
+        double sum = 0;
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
+            sum += abs(bounds.get(d).getUpper() - bounds.get(d).getLower());
+        return sum;
+    }
+
+    private double calculateArea() {
+        double productOfEdges = 1;
+        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
+            productOfEdges = productOfEdges * (bounds.get(d).getUpper() - bounds.get(d).getLower());
+        return abs(productOfEdges);
+    }
+
     double getArea() {
-        // If area is not yet initialized, find the area
         if (area == null)
             area = calculateArea();
 
@@ -49,6 +61,14 @@ class MBR implements Serializable {
         return margin;
     }
 
+    public double minSum(){
+        double sum = 0.0;
+        for (Bounds b: this.bounds){
+            sum += b.getLower();
+        }
+        return sum;
+    }
+
     boolean checkOverLapWithPoint(ArrayList<Double> point, double radius){
         // If the minimum distance from the point is less or equal the point's radius then the bounding box is in the range
         return findMinDistanceFromPoint(point) <= radius;
@@ -56,7 +76,6 @@ class MBR implements Serializable {
 
     double findMinDistanceFromPoint(ArrayList<Double> point){
         double minDistance = 0;
-        // For every dimension find the minimum distance
         double rd;
         for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
@@ -83,21 +102,7 @@ class MBR implements Serializable {
         return center;
     }
 
-    private double calculateMargin() {
-        double sum = 0;
-        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
-            sum += abs(bounds.get(d).getUpper() - bounds.get(d).getLower());
-        return sum;
-    }
-
-    private double calculateArea() {
-        double productOfEdges = 1;
-        for (int d = 0; d < FilesManager.getDataDimensions(); d++)
-            productOfEdges = productOfEdges * (bounds.get(d).getUpper() - bounds.get(d).getLower());
-        return abs(productOfEdges);
-    }
-
-    static boolean checkOverlap(MBR MBRA, MBR MBRB) {
+    static boolean checkOverlap(BoundingBox MBRA, BoundingBox MBRB) {
         for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             double overlapD = Math.min(MBRA.getBounds().get(d).getUpper(), MBRB.getBounds().get(d).getUpper())
@@ -109,7 +114,7 @@ class MBR implements Serializable {
         return true;
     }
 
-    static double calculateOverlapValue(MBR MBRA, MBR MBRB) {
+    static double calculateOverlapValue(BoundingBox MBRA, BoundingBox MBRB) {
         double overlapValue = 1;
         for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
@@ -124,20 +129,12 @@ class MBR implements Serializable {
         return overlapValue;
     }
 
-    static double findDistanceBetweenBoundingBoxes(MBR MBRA, MBR MBRB) {
+    static double findDistanceBetweenBoundingBoxes(BoundingBox MBRA, BoundingBox MBRB) {
         double distance = 0;
         for (int d = 0; d < FilesManager.getDataDimensions(); d++)
         {
             distance += Math.pow(MBRA.getCenter().get(d) - MBRB.getCenter().get(d),2);
         }
         return sqrt(distance);
-    }
-    
-    public double minSum(){
-        double sum = 0.0;
-        for (Bounds b: this.bounds){
-            sum += b.getLower();
-        }
-        return sum;
     }
 }
