@@ -9,21 +9,17 @@ class EntryComparator {
     static class EntryBoundComparator implements Comparator<Entry>
     {
         // Hash-map  used for mapping the comparison value of the Entries during the compare method
-        // Key of the hash-map is the given Entry
-        // Value of the hash-map is the given Entry's bound (either upper or lower)
+        // Key: the given entry and Value: the given entry's bounds
         private HashMap<Entry,Double> entryComparisonMap;
 
         EntryBoundComparator(List<Entry> entriesToCompare, int dimension, boolean compareByUpper)
         {
-            // Initialising hash-map
             this.entryComparisonMap = new HashMap<>();
-            // If the comparison is based on the upper bound
             if (compareByUpper)
             {
                 for (Entry entry : entriesToCompare)
                     entryComparisonMap.put(entry,entry.getBoundingBox().getBounds().get(dimension).getUpper());
             }
-            // else if the comparison is based on the lower bound
             else
             {
                 for (Entry entry : entriesToCompare)
@@ -37,12 +33,10 @@ class EntryComparator {
         }
     }
 
-    // Class used to compare entries by their area enlargement of including a new BoundingBox ("rectangle" item)
+    // Class used to compare entries by their area enlargement of including a new BoundingBox
     static class EntryAreaEnlargementComparator implements Comparator<Entry>
     {
         // Hash-map used for mapping the comparison value of the Entries during the compare method
-        // First value of the ArrayList is the area of the bounding box
-        // Second value of the ArrayList is the area enlargement of the specific Entry
         private HashMap<Entry,ArrayList<Double>> entryComparisonMap;
 
         EntryAreaEnlargementComparator(List<Entry> entriesToCompare, MBR MBRToAdd)
@@ -82,21 +76,20 @@ class EntryComparator {
         private ArrayList<Entry> nodeEntries; // All the entries of the Node
 
         // Hash-map used for mapping the comparison value of the Entries during the compare method
-        // Key of the hash-map is the given Entry
-        // Value of the hash-map is the given Entry's overlap Enlargement
+        // Key: given Entry
+        // Value: the given Entry's overlap Enlargement
         private HashMap<Entry,Double> entryComparisonMap;
         EntryOverlapEnlargementComparator(List<Entry> entriesToCompare, MBR MBRToAdd, ArrayList<Entry> nodeEntries)
         {
             this.MBRToAdd = MBRToAdd;
             this.nodeEntries = nodeEntries;
 
-            // Initialising Hash-map
             this.entryComparisonMap = new HashMap<>();
             for (Entry entry : entriesToCompare)
             {
                 double overlapEntry = calculateEntryOverlapValue(entry, entry.getBoundingBox());
-                Entry newEntry = new Entry(new MBR(Bounds.findMinimumBounds(entry.getBoundingBox(), MBRToAdd))); // The entry's bounding box after it includes the new bounding box
-                double overlapNewEntry = calculateEntryOverlapValue(entry, newEntry.getBoundingBox()); // Using the previous entry signature in order to check for equality
+                Entry newEntry = new Entry(new MBR(Bounds.findMinimumBounds(entry.getBoundingBox(), MBRToAdd)));
+                double overlapNewEntry = calculateEntryOverlapValue(entry, newEntry.getBoundingBox());
                 double overlapEnlargementEntry = overlapNewEntry - overlapEntry ;
 
                 if (overlapEnlargementEntry < 0)
@@ -110,7 +103,7 @@ class EntryComparator {
         public int compare(Entry entryA, Entry entryB) {
             double overlapEnlargementEntryA = entryComparisonMap.get(entryA);
             double overlapEnlargementEntryB = entryComparisonMap.get(entryB);
-            // Resolve ties by choosing the entry whose rectangle needs least area enlargement, then
+            // Resolve ties by choosing the entry whose rectangle needs the least area enlargement, then
             // the entry with the rectangle of smallest area (which is included in the EntryAreaEnlargementComparator)
             if (overlapEnlargementEntryA == overlapEnlargementEntryB)
             {   ArrayList<Entry> entriesToCompare = new ArrayList<>();
@@ -122,7 +115,6 @@ class EntryComparator {
                 return Double.compare(overlapEnlargementEntryA,overlapEnlargementEntryB);
         }
 
-        // Calculates and returns the overlap value of the given entry with the other node entries
         double calculateEntryOverlapValue(Entry entry, MBR MBR){
             double sum = 0;
             for (Entry nodeEntry : nodeEntries)
@@ -138,12 +130,11 @@ class EntryComparator {
     static class EntryDistanceFromCenterComparator implements Comparator<Entry>
     {
         // Hash-map  used for mapping the comparison value of the Entries during the compare method
-        // Key of the hash-map is the given Entry
-        // Value of the hash-map is the given Entry's BoundingBox distance from the given BoundingBox
+        // Key: the given Entry
+        // Value: the given Entry's BoundingBox distance from the given BoundingBox
         private HashMap<Entry,Double> entryComparisonMap;
 
         EntryDistanceFromCenterComparator(List<Entry>entriesToCompare, ArrayList<Double> point) {
-            // Initialising Hash-map
             this.entryComparisonMap = new HashMap<>();
 
             for (Entry entry : entriesToCompare)
@@ -151,7 +142,6 @@ class EntryComparator {
         }
 
         EntryDistanceFromCenterComparator(List<Entry>entriesToCompare, MBR MBR) {
-            // Initialising Hash-map
             this.entryComparisonMap = new HashMap<>();
 
             for (Entry entry : entriesToCompare)
