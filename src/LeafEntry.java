@@ -1,18 +1,11 @@
-import java.util.ArrayList;
-
-// Represents the entries on the bottom of the RStarTree
-// Extends the Entry Class where it's BoundingBox
-// is the bounding box of the spatial object (the record) indexed
-// also holds the recordId of the record and a pointer of the block which the record is saved in the datafile
+// Entries at the bottom of the tree (leaf - level)
+// Holds the record ID as well as the block ID to the corresponding datafile block
 public class LeafEntry extends Entry {
-    private long datafileBlockId;
+    private long datafileBlockId; // points to the corresponding block in the datafile
     public LeafEntry(long datafileBlockId, MBR mbr) {
-        super(mbr);  // sets bounding box
-        this.datafileBlockId = datafileBlockId;
-        this.setChildNodeBlockId(datafileBlockId);  // sets block pointer
+        super(mbr);  // sets bounding box BlockId = datafileBlockId;
+        this.setChildNodeBlockId(datafileBlockId);
     }
-
-
 
     public long getDataBlockId() {
         return datafileBlockId;
