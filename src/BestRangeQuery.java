@@ -1,14 +1,14 @@
 import java.util.ArrayList;
 
 public class BestRangeQuery {
-    public static ArrayList<Record> bestRangeQuery(Node node, MBR queryMBR) {
+    public static ArrayList<Record> bestRangeQuery(Node node, BoundingBox queryBoundingBox) {
         ArrayList<Record> results = new ArrayList<>();
 
         int dims = FilesManager.getDataDimensions();
         double[] minCoordinate = new double[dims];
         double[] maxCoordinate = new double[dims];
 
-        ArrayList<Bounds> boundsList = queryMBR.getBounds();
+        ArrayList<Bounds> boundsList = queryBoundingBox.getBounds();
         for (int i = 0; i < dims; i++) {
             Bounds b = boundsList.get(i);
             minCoordinate[i] = b.getLower();
@@ -16,9 +16,9 @@ public class BestRangeQuery {
         }
 
         for (Entry entry : node.getEntries()) {
-            MBR entryMBR = entry.getBoundingBox();
+            BoundingBox entryBoundingBox = entry.getBoundingBox();
 
-            if (MBR.checkOverlap(entryMBR, queryMBR)) {
+            if (BoundingBox.checkOverlap(entryBoundingBox, queryBoundingBox)) {
                 if (node.getNodeLevelInTree() == RStarTree.getLeafLevel()) {
                     ArrayList<Record> recordsList = FilesManager.readDataFileBlock(entry.getChildNodeBlockId());
                     if (recordsList != null) {
@@ -31,7 +31,7 @@ public class BestRangeQuery {
                 } else {
                     Node childNode = FilesManager.readIndexFileBlock(entry.getChildNodeBlockId());
                     if (childNode != null) {
-                        results.addAll(bestRangeQuery(childNode, queryMBR));
+                        results.addAll(bestRangeQuery(childNode, queryBoundingBox));
                     }
                 }
             }

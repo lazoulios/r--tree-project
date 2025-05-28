@@ -34,31 +34,29 @@ public class BestSkylineQuery {
                  long childNodeBlockId = e.getChildNodeBlockId();
                  Node childNode = FilesManager.readIndexFileBlock(childNodeBlockId);
                  if (childNode==null) continue;
-                 for (Entry childEntry: childNode.getEntries()){
-                     entriesQueue.add(childEntry);
-                 }
+                 entriesQueue.addAll(childNode.getEntries());
              }
          }
          return skylineResult;
      }
+
+    private static boolean dominates(ArrayList<Double> skylinePoint, ArrayList<Double> candidatePoint){
+        boolean betterInOne = false;
+        for (int i=0; i<skylinePoint.size(); i++){
+            if (skylinePoint.get(i)>candidatePoint.get(i)){
+                return false;
+            }
+            else if (skylinePoint.get(i)<candidatePoint.get(i)){
+                betterInOne = true;
+            }
+        }
+        return betterInOne;
+    }
 
      private static boolean isDominated(ArrayList<Double> candidatePoint, ArrayList<Record> skyline){
          for (Record s : skyline) {
              if (dominates(s.getCoordinates(), candidatePoint)) return true;
          }
          return false;
-     }
-
-     private static boolean dominates(ArrayList<Double> skylinePoint, ArrayList<Double> candidatePoint){
-         boolean betterInOne = false;
-         for (int i=0; i<skylinePoint.size(); i++){
-             if (skylinePoint.get(i)>candidatePoint.get(i)){
-                 return false;
-             }
-             else if (skylinePoint.get(i)<candidatePoint.get(i)){
-                 betterInOne = true;
-             }
-         }
-         return betterInOne;
      }
 }

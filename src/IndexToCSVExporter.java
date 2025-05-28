@@ -33,8 +33,8 @@ public class IndexToCSVExporter {
             }
             line.append(",");
 
-            MBR mbr = entry.getBoundingBox();
-            List<Bounds> bounds = mbr.getBounds();
+            BoundingBox boundingBox = entry.getBoundingBox();
+            List<Bounds> bounds = boundingBox.getBounds();
             for (int i = 0; i < bounds.size(); i++) {
                 Bounds b = bounds.get(i);
                 line.append(b.getLower()).append("-").append(b.getUpper());

@@ -86,7 +86,7 @@ public class Main {
             ArrayList<Record> queryResults;
             ArrayList<Bounds> boundsList;
             int dims;
-            MBR queryMBR;
+            BoundingBox queryBoundingBox;
 
             switch (selection) {
 
@@ -119,9 +119,9 @@ public class Main {
                         }
                     }
 
-                    queryMBR = new MBR(boundsList);
+                    queryBoundingBox = new BoundingBox(boundsList);
                     startTime = System.nanoTime();
-                    queryResults = WorstRangeQuery.runLinearRangeQuery(queryMBR);
+                    queryResults = WorstRangeQuery.runLinearRangeQuery(queryBoundingBox);
                     endTime = System.nanoTime();
                     duration_in_ms = (endTime - startTime) / 1000000.0;
 
@@ -161,9 +161,9 @@ public class Main {
                         }
                     }
 
-                    queryMBR = new MBR(boundsList);
+                    queryBoundingBox = new BoundingBox(boundsList);
                     startTime = System.nanoTime();
-                    queryResults = BestRangeQuery.bestRangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryMBR);
+                    queryResults = BestRangeQuery.bestRangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryBoundingBox);
                     endTime = System.nanoTime();
                     duration_in_ms = (endTime - startTime) / 1000000.0;
 
