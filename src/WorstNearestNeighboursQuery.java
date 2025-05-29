@@ -3,49 +3,41 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-// Class used for executing a k-nearest neighbours query of a specific search point without any use of an index
-// Finds the k closest records of that search point
-
-
 class WorstNearestNeighboursQuery {
-    private ArrayList<Double> searchPoint;
+    private ArrayList<Double> target;
     private int k;
     private PriorityQueue<RecordDistancePair> nearestNeighbours;
 
-    WorstNearestNeighboursQuery(ArrayList<Double> searchPoint, int k) {
+    WorstNearestNeighboursQuery(ArrayList<Double> target, int k) {
         if (k < 0)
-            throw new IllegalArgumentException("Parameter 'k' for the nearest neighbours must be a positive integer.");
-        this.searchPoint = searchPoint;
+            throw new IllegalArgumentException("The number of nearest neighbours must be a positive integer.");
+        this.target = target;
         this.k = k;
-
-        // Μετατρέπει το PriorityQueue σε max-heap (με βάση απόσταση)
         this.nearestNeighbours = new PriorityQueue<>(k, new Comparator<RecordDistancePair>() {
             @Override
-            public int compare(RecordDistancePair a, RecordDistancePair b) {
-                return Double.compare(b.getDistance(), a.getDistance());
+            public int compare(RecordDistancePair x, RecordDistancePair y) {
+                return Double.compare(y.getDistance(), x.getDistance());
             }
         });
     }
 
-    // ✅ Νέα έκδοση που επιστρέφει τα Record αντικείμενα
-    ArrayList<Record> getNearestRecords() {
-        findNeighbours();
-        ArrayList<Record> result = new ArrayList<>();
-        while (!nearestNeighbours.isEmpty()) {
-            result.add(nearestNeighbours.poll().getRecord());
+    private double findEuclideanDistance(ArrayList<Double> x, ArrayList<Double> y) {
+        double sum = 0;
+        for (int i = 0; i < x.size(); i++) {
+            double diff = x.get(i) - y.get(i);
+            sum += diff * diff;
         }
-        Collections.reverse(result); // Να είναι τα πιο κοντινά πρώτα
-        return result;
+        return Math.sqrt(sum);
     }
 
-    private void findNeighbours() {
+    private void searchNeighbours() {
         int totalBlocks = FilesManager.getTotalBlocksInDataFile();
         for (int blockId = 1; blockId < totalBlocks; blockId++) {
             ArrayList<Record> recordsInBlock = FilesManager.readDataFileBlock(blockId);
             if (recordsInBlock == null) continue;
 
             for (Record record : recordsInBlock) {
-                double distance = calculateEuclideanDistance(record.getCoordinates(), searchPoint);
+                double distance = findEuclideanDistance(record.getCoordinates(), target);
 
                 if (nearestNeighbours.size() < k) {
                     nearestNeighbours.add(new RecordDistancePair(record, distance));
@@ -57,31 +49,31 @@ class WorstNearestNeighboursQuery {
         }
     }
 
-    // Υπολογισμός ευκλείδειας απόστασης
-    private double calculateEuclideanDistance(ArrayList<Double> a, ArrayList<Double> b) {
-        double sum = 0;
-        for (int i = 0; i < a.size(); i++) {
-            double diff = a.get(i) - b.get(i);
-            sum += diff * diff;
+    ArrayList<Record> getNearestRecords() {
+        searchNeighbours();
+        ArrayList<Record> result = new ArrayList<>();
+        while (!nearestNeighbours.isEmpty()) {
+            result.add(nearestNeighbours.poll().getRecord());
         }
-        return Math.sqrt(sum);
+        Collections.reverse(result);
+        return result;
     }
 }
 
-    class RecordDistancePair {
-        private final Record record;
-        private final double distance;
+class RecordDistancePair {
+    private final Record record;
+    private final double distance;
 
-        public RecordDistancePair(Record record, double distance) {
-            this.record = record;
-            this.distance = distance;
-        }
+    public RecordDistancePair(Record record, double distance) {
+        this.record = record;
+        this.distance = distance;
+    }
 
-        public Record getRecord() {
+    public Record getRecord() {
             return record;
         }
 
-        public double getDistance() {
+    public double getDistance() {
             return distance;
         }
-    }
+}

@@ -11,13 +11,12 @@ public class Main {
 
         if (filesExist) {
             System.out.println("Data-file and index-file already exist");
-            System.out.print("Do you want to make new ones based on the data of the " + FilesManager.getPathToCsv() +  " file? (y/n): ");
+            System.out.print("Do you want to make new data and index files using the " + FilesManager.getPathToCsv() +  " file? (y/n): ");
             String answer;
             while (true)
             {
                 answer = scanner.nextLine().trim().toLowerCase();
                 System.out.println();
-                // In case user wants to reset the files
                 if (answer.equals("y")) {
                     resetFiles = true;
                     break;
@@ -44,16 +43,33 @@ public class Main {
         FilesManager.initializeIndexFile(dataDimensions, resetFiles);
 
         double duration_in_ms;
-        long startTime;
-        long endTime;
+        long innitStartTime;
+        long innitEndTime;
 
         if(insertRecordsFromDataFile) {
+            System.out.println("Do you want to bulk load the R*Tree? (y/n): ");
+            String answer;
+            boolean doBulkLoad;
+            while (true)
+            {
+                answer = scanner.nextLine().trim().toLowerCase();
+                System.out.println();
+                if (answer.equals("y")) {
+                    doBulkLoad = true;
+                    break;
+                } else if (answer.equals("n")) {
+                    doBulkLoad = false;
+                    break;
+                } else {
+                    System.out.println("Please answer with y/n: ");
+                }
+            }
             System.out.println("Building R*Tree index from datafile...");
             System.out.println();
-            startTime = System.nanoTime();
-            new RStarTree(true);
-            endTime = System.nanoTime();
-            duration_in_ms = (endTime - startTime);
+            innitStartTime = System.nanoTime();
+            new RStarTree(doBulkLoad);
+            innitEndTime = System.nanoTime();
+            duration_in_ms = (innitEndTime - innitStartTime);
             System.out.println();
             System.out.println("R*Tree index built in " +duration_in_ms / 1000000.0 + "ms");
         }
@@ -120,10 +136,10 @@ public class Main {
                     }
 
                     queryBoundingBox = new BoundingBox(boundsList);
-                    startTime = System.nanoTime();
-                    queryResults = WorstRangeQuery.runLinearRangeQuery(queryBoundingBox);
-                    endTime = System.nanoTime();
-                    duration_in_ms = (endTime - startTime) / 1000000.0;
+                    innitStartTime = System.nanoTime();
+                    queryResults = WorstRangeQuery.run(queryBoundingBox);
+                    innitEndTime = System.nanoTime();
+                    duration_in_ms = (innitEndTime - innitStartTime) / 1000000.0;
 
                     System.out.println("Results:");
 
@@ -162,10 +178,10 @@ public class Main {
                     }
 
                     queryBoundingBox = new BoundingBox(boundsList);
-                    startTime = System.nanoTime();
+                    innitStartTime = System.nanoTime();
                     queryResults = BestRangeQuery.bestRangeQuery(FilesManager.readIndexFileBlock(RStarTree.getRootNodeBlockId()), queryBoundingBox);
-                    endTime = System.nanoTime();
-                    duration_in_ms = (endTime - startTime) / 1000000.0;
+                    innitEndTime = System.nanoTime();
+                    duration_in_ms = (innitEndTime - innitStartTime) / 1000000.0;
 
 
                     System.out.println("Results:");
@@ -198,12 +214,12 @@ public class Main {
                     }
 
                     // Run k-NN query
-                    startTime = System.nanoTime();
+                    innitStartTime = System.nanoTime();
                     WorstNearestNeighboursQuery query = new WorstNearestNeighboursQuery(queryPoint, k);
                     queryResults = query.getNearestRecords();
-                    endTime = System.nanoTime();
+                    innitEndTime = System.nanoTime();
 
-                    double duration = (endTime - startTime) / 1_000_000.0;
+                    double duration = (innitEndTime - innitStartTime) / 1_000_000.0;
                     System.out.println("Results:");
 
                     for (Record record : queryResults) {
@@ -233,11 +249,11 @@ public class Main {
                         queryPoint2.add(val);
                     }
                     // Run k-NN query
-                    startTime = System.nanoTime();
+                    innitStartTime = System.nanoTime();
                     queryResults = BestNearestNeighboursQuery.getNearestNeighbours(queryPoint2, k2);
-                    endTime = System.nanoTime();
+                    innitEndTime = System.nanoTime();
 
-                    double duration2 = (endTime - startTime) / 1_000_000.0;
+                    double duration2 = (innitEndTime - innitStartTime) / 1_000_000.0;
                     System.out.println("Results:");
 
                     for (Record record : queryResults) {
@@ -256,11 +272,11 @@ public class Main {
                 case "5":
                     System.out.println("Linear Skyline Query Selected");
 
-                    startTime = System.nanoTime();
-                    queryResults = WorstSkylineQuery.computeSkyline();
-                    endTime = System.nanoTime();
+                    innitStartTime = System.nanoTime();
+                    queryResults = WorstSkylineQuery.run();
+                    innitEndTime = System.nanoTime();
 
-                    duration_in_ms = (endTime - startTime) / 1_000_000.0;
+                    duration_in_ms = (innitEndTime - innitStartTime) / 1_000_000.0;
 
                     System.out.println("Records in skyline:");
 
@@ -278,12 +294,12 @@ public class Main {
 
                     System.out.println("Skyline Query using R* Tree Index (Optimal) Selected");
 
-                    startTime = System.nanoTime();
+                    innitStartTime = System.nanoTime();
 
                     ArrayList<Record> skylineResults = BestSkylineQuery.computeSkyline();
 
-                     endTime = System.nanoTime();
-                    double durationInMs = (endTime - startTime) / 1_000_000.0;
+                     innitEndTime = System.nanoTime();
+                    double durationInMs = (innitEndTime - innitStartTime) / 1_000_000.0;
 
                     System.out.println("Skyline Records:");
 

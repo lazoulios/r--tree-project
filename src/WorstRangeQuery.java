@@ -1,12 +1,11 @@
 import  java.util.ArrayList;
 
-
 public class WorstRangeQuery {
 
-    //Checks if the coordinates are in between the min and max in any dimensions
-    private static boolean inRange(ArrayList<Double> coords, double[] minCoor, double[] maxCoor) {
+    //Simple helper method that shows if the coords provided exist between the minCoords and maxCoords provided
+    private static boolean inRange(ArrayList<Double> coords, double[] minCoords, double[] maxCoords) {
         for (int i = 0; i < coords.size(); i++) {
-            if (coords.get(i) < minCoor[i] || coords.get(i) > maxCoor[i]) {
+            if (coords.get(i) < minCoords[i] || coords.get(i) > maxCoords[i]) {
                 return false;
             }
         }
@@ -14,29 +13,27 @@ public class WorstRangeQuery {
     }
 
     //Performs a linear scan of the entire data file
-    public static ArrayList<Record> runLinearRangeQuery(BoundingBox queryBoundingBox){
+    public static ArrayList<Record> run(BoundingBox queryBB){
         ArrayList<Record> results = new ArrayList<>();
-
         int totalBlocks = FilesManager.getTotalBlocksInDataFile();
-        ArrayList<Bounds> boundsList = queryBoundingBox.getBounds();
+        ArrayList<Bounds> boundsList = queryBB.getBounds();
 
-        int dimensions = FilesManager.getDataDimensions();
-        double[] minCoor = new double[dimensions];
-        double[] maxCoor = new double[dimensions];
+        int dims = FilesManager.getDataDimensions();
+        double[] minCoord = new double[dims];
+        double[] maxCoord = new double[dims];
 
-        for (int i = 0; i < dimensions; i++) {
-            Bounds b = boundsList.get(i);
-            minCoor[i]= b.getLower();
-            maxCoor[i]= b.getUpper();
+        for (int i = 0; i < dims; i++) {
+            Bounds bounds = boundsList.get(i);
+            minCoord[i]= bounds.getLower();
+            maxCoord[i]= bounds.getUpper();
         }
-
         for(int blockId=1; blockId<totalBlocks; blockId++){
             ArrayList<Record> records = FilesManager.readDataFileBlock(blockId);
-            if(records == null) continue;
-
-            for(Record rec : records){
-                if(inRange(rec.getCoordinates(), minCoor, maxCoor)){
-                    results.add(rec);
+            if(records == null)
+                continue;
+            for(Record record : records){
+                if(inRange(record.getCoordinates(), minCoord, maxCoord)){
+                    results.add(record);
                 }
             }
         }

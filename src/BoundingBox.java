@@ -25,7 +25,7 @@ class BoundingBox implements Serializable {
         }
         this.bounds = boundsList;
         this.area = calculateArea();
-        this.margin = calculateArea();
+        this.margin = calculateMargin();
         this.center = getCenter();
     }
 

@@ -1,27 +1,40 @@
 import java.util.ArrayList;
 
 public class WorstSkylineQuery {
+    // Simple helper method to check if one record X dominates a second record Y
+    private static boolean dominates(Record x, Record y) {
+        boolean flag = false;
+        ArrayList<Double> coordsX = x.getCoordinates();
+        ArrayList<Double> coordsY = y.getCoordinates();
 
-    public static ArrayList<Record> computeSkyline() {
+        for (int i = 0; i < coordsX.size(); i++) {
+            if (coordsX.get(i) > coordsY.get(i)) {
+                return false;
+            } else if (coordsX.get(i) < coordsY.get(i)) {
+                flag = true;
+            }
+        }
+        return flag;
+    }
+
+    public static ArrayList<Record> run() {
         ArrayList<Record> skyline = new ArrayList<>();
 
-        System.out.println("🧮 Calculating Linear Skyline...");
+        System.out.println("[🧮] Calculating Linear Skyline...");
         long startTime = System.currentTimeMillis();
-
-        // Φόρτωσε όλα τα records από το datafile
+        // datafile loading
         ArrayList<Record> allRecords = new ArrayList<>();
         int totalBlocks = FilesManager.getTotalBlocksInDataFile();
-        for (int i = 1; i < totalBlocks; i++) { // skip block 0 (metadata)
+        for (int i = 1; i < totalBlocks; i++) {
             ArrayList<Record> blockRecords = FilesManager.readDataFileBlock(i);
             if (blockRecords != null)
                 allRecords.addAll(blockRecords);
         }
 
         int total = allRecords.size();
-        System.out.println("🔢 Total records loaded: " + total);
+        System.out.println("[📚] Total records loaded: " + total);
         System.out.println();
-
-        // Υπολόγισε το skyline
+        // Skyline calculation
         for (int i = 0; i < total; i++) {
             Record candidate = allRecords.get(i);
             boolean dominated = false;
@@ -34,34 +47,14 @@ public class WorstSkylineQuery {
             if (!dominated) {
                 skyline.add(candidate);
             }
-
-            // Προβολή προόδου ανά 1000
-            if ((i + 1) % 1000 == 0 || i + 1 == total) {
-                long now = System.currentTimeMillis();
-                long elapsed = now - startTime;
-                double progress = (100.0 * (i + 1)) / total;
-                System.out.printf("🕒 Checked %d/%d records (%.2f%%) - Elapsed: %d ms%n",
-                        i + 1, total, progress, elapsed);
+            // Progress Report
+            if ((i+1) % 50000 == 0 || i+1 == total) {
+                long endTime = System.currentTimeMillis();
+                double progress = (100.0 * (i+1)) / total;
+                System.out.printf("[🔎] Checked %d/%d records (%.2f%%) - Elapsed: %d ms%n",
+                        i+1, total, progress, (endTime - startTime));
             }
         }
-
         return skyline;
-    }
-
-    // Επιστρέφει true αν το A κυριαρχεί το B
-    private static boolean dominates(Record a, Record b) {
-        ArrayList<Double> coordsA = a.getCoordinates();
-        ArrayList<Double> coordsB = b.getCoordinates();
-        boolean strictlyBetterInOne = false;
-
-        for (int i = 0; i < coordsA.size(); i++) {
-            if (coordsA.get(i) > coordsB.get(i)) {
-                return false;
-            } else if (coordsA.get(i) < coordsB.get(i)) {
-                strictlyBetterInOne = true;
-            }
-        }
-
-        return strictlyBetterInOne;
     }
 }

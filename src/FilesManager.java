@@ -2,9 +2,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 class FilesManager {
     private static final String DELIMITER = ",";
@@ -16,6 +14,7 @@ class FilesManager {
     private static int totalBlocksInDataFile;
     private static int totalBlocksInIndexFile;
     private static int totalLevelsOfTreeIndex;
+    private static long nextAvailableIndexBlockId = 1;
     private static final Map<Long, Node> indexBuffer = new LinkedHashMap<>();
 
 
@@ -352,4 +351,19 @@ class FilesManager {
         }
     }
 
+    public static Map<Node, Integer> writeNewIndexFileBlocks(List<Node> nodes) {
+        Map<Node, Integer> result = new HashMap<>();
+
+        for (Node node : nodes) {
+            long blockID = getNextIndexBlockId();
+            node.setNodeBlockId((int) blockID);
+            indexBuffer.put(blockID, node);
+            result.put(node,(int) blockID);
+        }
+        return result;
+    }
+
+    public static long getNextIndexBlockId() {
+        return ++nextAvailableIndexBlockId;
+    }
 }
