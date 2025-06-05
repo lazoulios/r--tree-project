@@ -31,10 +31,10 @@ class FilesManager {
     }
 
     private static byte[] serialize(Object obj) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(stream);
         oos.writeObject(obj);
-        return baos.toByteArray();
+        return stream.toByteArray();
     }
 
     static ArrayList<Integer> getIndexMetaData() {
@@ -47,19 +47,19 @@ class FilesManager {
 
     private static ArrayList<Integer> readMetaDataBlock(String pathToFile) {
         try {
-            RandomAccessFile raf = new RandomAccessFile(new File(pathToFile), "r");
+            RandomAccessFile accessFile = new RandomAccessFile(new File(pathToFile), "r");
             byte[] block = new byte[BLOCK_SIZE];
-            raf.seek(0);
-            int bytesRead = raf.read(block);
+            accessFile.seek(0);
+            int bytesRead = accessFile.read(block);
             if (bytesRead != BLOCK_SIZE) {
                 throw new IOException("Could not read full metadata block (expected " + BLOCK_SIZE + ", got " + bytesRead + ")");
             }
-            ByteArrayInputStream bais = new ByteArrayInputStream(block);
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            int metaDataSize = (Integer) ois.readObject();
+            ByteArrayInputStream byte_input_stream = new ByteArrayInputStream(block);
+            ObjectInputStream obj_input_stream = new ObjectInputStream(byte_input_stream);
+            int metaDataSize = (Integer) obj_input_stream.readObject();
             byte[] metadataBytes = new byte[metaDataSize];
-            int actuallyRead = bais.read(metadataBytes);
-            if (actuallyRead != metaDataSize) {
+            int read_content = byte_input_stream.read(metadataBytes);
+            if (read_content != metaDataSize) {
                 throw new IOException("Could not read full metadata content");
             }
             ObjectInputStream metadataStream = new ObjectInputStream(new ByteArrayInputStream(metadataBytes));
@@ -83,12 +83,12 @@ class FilesManager {
             }
             byte[] metaDataInBytes = serialize(fileMetaData);
             byte[] metaDataSizeBytes = serialize(metaDataInBytes.length);
-            byte[] block = new byte[BLOCK_SIZE];
-            System.arraycopy(metaDataSizeBytes, 0, block, 0, metaDataSizeBytes.length);
-            System.arraycopy(metaDataInBytes, 0, block, metaDataSizeBytes.length, metaDataInBytes.length);
-            RandomAccessFile raf = new RandomAccessFile(new File(pathToFile), "rw");
-            raf.write(block);
-            raf.close();
+            byte[] blockInBytes = new byte[BLOCK_SIZE];
+            System.arraycopy(metaDataSizeBytes, 0, blockInBytes, 0, metaDataSizeBytes.length);
+            System.arraycopy(metaDataInBytes, 0, blockInBytes, metaDataSizeBytes.length, metaDataInBytes.length);
+            RandomAccessFile accessFile = new RandomAccessFile(new File(pathToFile), "rw");
+            accessFile.write(blockInBytes);
+            accessFile.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -99,15 +99,15 @@ class FilesManager {
     }
 
     private static int calculateMaxRecordsInBlock() {
-        ArrayList<Record> blockRecords = new ArrayList<>();
+        ArrayList<Record> recordsInBlock = new ArrayList<>();
         int i;
         for (i = 0; i < 10000; i++) {
-            ArrayList<Double> coords = new ArrayList<>();
+            ArrayList<Double> coordinates = new ArrayList<>();
             for (int d = 0; d < dataDimensions; d++)
-                coords.add(0.0);
-            Record record = new Record(0, "default_name", coords);
-            blockRecords.add(record);
-            byte[] recordInBytes = serializeOrEmpty(blockRecords);
+                coordinates.add(0.0);
+            Record record = new Record(0, "default_name", coordinates);
+            recordsInBlock.add(record);
+            byte[] recordInBytes = serializeOrEmpty(recordsInBlock);
             byte[] lengthInBytes = serializeOrEmpty(recordInBytes.length);
             if (lengthInBytes.length + recordInBytes.length > BLOCK_SIZE)
                 break;
@@ -126,20 +126,20 @@ class FilesManager {
 
     public static void writeDataFileBlock(ArrayList<Record> records) {
         try {
-            byte[] recordInBytes = serialize(records);
-            byte[] metaDataLengthInBytes = serialize(recordInBytes.length);
+            byte[] recordSerialized = serialize(records);
+            byte[] metaDataLengthSerialized = serialize(recordSerialized.length);
             byte[] block = new byte[BLOCK_SIZE];
-            if (metaDataLengthInBytes.length + recordInBytes.length > BLOCK_SIZE) {
+            if (metaDataLengthSerialized.length + recordSerialized.length > BLOCK_SIZE) {
                 throw new IllegalStateException("Block too large to fit in one data block");
             }
-            System.arraycopy(metaDataLengthInBytes, 0, block, 0, metaDataLengthInBytes.length);
-            System.arraycopy(recordInBytes, 0, block, metaDataLengthInBytes.length, recordInBytes.length);
-            FileOutputStream fos = new FileOutputStream(PATH_TO_DATAFILE, true);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            bos.write(block);
+            System.arraycopy(metaDataLengthSerialized, 0, block, 0, metaDataLengthSerialized.length);
+            System.arraycopy(recordSerialized, 0, block, metaDataLengthSerialized.length, recordSerialized.length);
+            FileOutputStream fileOutStream = new FileOutputStream(PATH_TO_DATAFILE, true);
+            BufferedOutputStream byteOutStream = new BufferedOutputStream(fileOutStream);
+            byteOutStream.write(block);
             totalBlocksInDataFile++;
             updateMetaDataBlock(PATH_TO_DATAFILE);
-            bos.close();
+            byteOutStream.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -147,55 +147,55 @@ class FilesManager {
 
     static ArrayList<Record> readDataFileBlock(long blockID) {
         try {
-            RandomAccessFile raf = new RandomAccessFile(new File(PATH_TO_DATAFILE), "r");
-            raf.seek(blockID * BLOCK_SIZE);
+            RandomAccessFile accessFile = new RandomAccessFile(new File(PATH_TO_DATAFILE), "r");
+            accessFile.seek(blockID * BLOCK_SIZE);
             byte[] block = new byte[BLOCK_SIZE];
-            int bytesRead = raf.read(block);
+            int bytesRead = accessFile.read(block);
             if (bytesRead != BLOCK_SIZE)
-                throw new IOException("Block size read was not " + BLOCK_SIZE + " bytes");
-            ByteArrayInputStream bais = new ByteArrayInputStream(block);
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            int recordDataLength = (Integer) ois.readObject();
+                throw new IOException("The block size read was not exactly" + BLOCK_SIZE + " bytes");
+            ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(block);
+            ObjectInputStream objInputStream = new ObjectInputStream(arrayInputStream);
+            int recordDataLength = (Integer) objInputStream.readObject();
             byte[] recordBytes = new byte[recordDataLength];
-            int actuallyRead = bais.read(recordBytes);
-            if (actuallyRead != recordDataLength)
-                throw new IOException("Could not read full record data");
-            ObjectInputStream recordOis = new ObjectInputStream(new ByteArrayInputStream(recordBytes));
-            return (ArrayList<Record>) recordOis.readObject();
+            int readData = arrayInputStream.read(recordBytes);
+            if (readData != recordDataLength)
+                throw new IOException("Could not read the full record data");
+            ObjectInputStream recordOutStream = new ObjectInputStream(new ByteArrayInputStream(recordBytes));
+            return (ArrayList<Record>) recordOutStream.readObject();
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    static void initializeDataFile(int dataDimensions, boolean newDataFile) {
+    static void initializeDataFile(int dataDims, boolean newDataFile) {
         try {
             if (!newDataFile && Files.exists(Paths.get(PATH_TO_DATAFILE))) {
                 ArrayList<Integer> dataFileMetaData = readMetaDataBlock(PATH_TO_DATAFILE);
                 if (dataFileMetaData == null)
-                    throw new Exception("Could not read datafile's MetaData block");
+                    throw new Exception("Could not read MetaData block from DataFile");
                 FilesManager.dataDimensions = dataFileMetaData.get(0);
                 totalBlocksInDataFile = dataFileMetaData.get(2);
             } else {
                 Files.deleteIfExists(Paths.get(PATH_TO_DATAFILE));
-                FilesManager.dataDimensions = dataDimensions;
+                FilesManager.dataDimensions = dataDims;
                 totalBlocksInDataFile = 1;
                 updateMetaDataBlock(PATH_TO_DATAFILE);
-                ArrayList<Record> blockRecords = new ArrayList<>();
+                ArrayList<Record> recordsInBlock = new ArrayList<>();
                 BufferedReader csvReader = new BufferedReader(new FileReader(PATH_TO_CSV));
                 csvReader.readLine();
                 int maxRecordsInBlock = calculateMaxRecordsInBlock();
                 String line;
                 while ((line = csvReader.readLine()) != null) {
-                    if (blockRecords.size() == maxRecordsInBlock) {
-                        writeDataFileBlock(blockRecords);
-                        blockRecords = new ArrayList<>();
+                    if (recordsInBlock.size() == maxRecordsInBlock) {
+                        writeDataFileBlock(recordsInBlock);
+                        recordsInBlock = new ArrayList<>();
                     }
-                    blockRecords.add(new Record(line));
+                    recordsInBlock.add(new Record(line));
                 }
                 csvReader.close();
-                if (!blockRecords.isEmpty())
-                    writeDataFileBlock(blockRecords);
+                if (!recordsInBlock.isEmpty())
+                    writeDataFileBlock(recordsInBlock);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -251,15 +251,15 @@ class FilesManager {
 
             ByteArrayInputStream bais = new ByteArrayInputStream(block);
 
-            byte[] lenBytes = new byte[4];
-            if (bais.read(lenBytes) != 4) throw new IOException("Couldn't read length bytes");
-            int nodeDataLength = ByteBuffer.wrap(lenBytes).getInt();
+            byte[] bytesLength = new byte[4];
+            if (bais.read(bytesLength) != 4) throw new IOException("Unable to read bytes length");
+            int nodeDataLength = ByteBuffer.wrap(bytesLength).getInt();
 
             byte[] nodeBytes = new byte[nodeDataLength];
-            if (bais.read(nodeBytes) != nodeDataLength) throw new IOException("Couldn't read full node data");
+            if (bais.read(nodeBytes) != nodeDataLength) throw new IOException("Unable to read full node data");
 
-            ObjectInputStream nodeOis = new ObjectInputStream(new ByteArrayInputStream(nodeBytes));
-            return (Node) nodeOis.readObject();
+            ObjectInputStream nodeObjInStream = new ObjectInputStream(new ByteArrayInputStream(nodeBytes));
+            return (Node) nodeObjInStream.readObject();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -269,20 +269,20 @@ class FilesManager {
 
 
     static void flushIndexBufferToDisk() {
-        try (RandomAccessFile raf = new RandomAccessFile(PATH_TO_INDEXFILE, "rw")) {
+        try (RandomAccessFile accessFile = new RandomAccessFile(PATH_TO_INDEXFILE, "rw")) {
             for (Map.Entry<Long, Node> entry : indexBuffer.entrySet()) {
-                long blockId = entry.getKey();
+                long entryKey = entry.getKey();
                 Node node = entry.getValue();
                 byte[] nodeInBytes = serialize(node);
-                byte[] lenBytes = ByteBuffer.allocate(4).putInt(nodeInBytes.length).array();
+                byte[] bytesLength = ByteBuffer.allocate(4).putInt(nodeInBytes.length).array();
                 byte[] block = new byte[BLOCK_SIZE];
-                System.arraycopy(lenBytes, 0, block, 0, 4);
+                System.arraycopy(bytesLength, 0, block, 0, 4);
                 System.arraycopy(nodeInBytes, 0, block, 4, nodeInBytes.length);
 
                 // Μετακίνηση στο σωστό offset
-                long offset = blockId * BLOCK_SIZE;
-                raf.seek(offset);
-                raf.write(block);
+                long offset = entryKey * BLOCK_SIZE;
+                accessFile.seek(offset);
+                accessFile.write(block);
             }
 
             updateMetaDataBlock(PATH_TO_INDEXFILE);
@@ -296,27 +296,6 @@ class FilesManager {
     static void setLevelsOfTreeIndex(int totalLevelsOfTreeIndex) {
         FilesManager.totalLevelsOfTreeIndex = totalLevelsOfTreeIndex;
         updateMetaDataBlock(PATH_TO_INDEXFILE);
-    }
-
-    static long appendRecordToDataBlock(Record record) {
-        try {
-            int maxRecords = calculateMaxRecordsInBlock();
-            for (long blockId = 1; blockId < totalBlocksInDataFile; blockId++) {
-                ArrayList<Record> records = readDataFileBlock(blockId);
-                if (records != null && records.size() < maxRecords) {
-                    records.add(record);
-                    overwriteDataFileBlock(blockId, records);
-                    return blockId;
-                }
-            }
-            ArrayList<Record> newBlock = new ArrayList<>();
-            newBlock.add(record);
-            writeDataFileBlock(newBlock);
-            return totalBlocksInDataFile - 1;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
-        }
     }
 
     static boolean deleteRecordFromDataBlock(Record record) {
@@ -335,19 +314,19 @@ class FilesManager {
     }
 
     private static void overwriteDataFileBlock(long blockId, ArrayList<Record> records) throws IOException {
-        byte[] recordInBytes = serialize(records);
-        byte[] metaDataLengthInBytes = serialize(recordInBytes.length);
+        byte[] recordSerialized = serialize(records);
+        byte[] metaDataLengthSerialized = serialize(recordSerialized.length);
         byte[] block = new byte[BLOCK_SIZE];
 
-        if (metaDataLengthInBytes.length + recordInBytes.length > BLOCK_SIZE)
+        if (metaDataLengthSerialized.length + recordSerialized.length > BLOCK_SIZE)
             throw new IllegalStateException("Block too large to overwrite");
 
-        System.arraycopy(metaDataLengthInBytes, 0, block, 0, metaDataLengthInBytes.length);
-        System.arraycopy(recordInBytes, 0, block, metaDataLengthInBytes.length, recordInBytes.length);
+        System.arraycopy(metaDataLengthSerialized, 0, block, 0, metaDataLengthSerialized.length);
+        System.arraycopy(recordSerialized, 0, block, metaDataLengthSerialized.length, recordSerialized.length);
 
-        try (RandomAccessFile raf = new RandomAccessFile(PATH_TO_DATAFILE, "rw")) {
-            raf.seek(blockId * BLOCK_SIZE);
-            raf.write(block);
+        try (RandomAccessFile accessFile = new RandomAccessFile(PATH_TO_DATAFILE, "rw")) {
+            accessFile.seek(blockId * BLOCK_SIZE);
+            accessFile.write(block);
         }
     }
 
@@ -355,10 +334,10 @@ class FilesManager {
         Map<Node, Integer> result = new HashMap<>();
 
         for (Node node : nodes) {
-            long blockID = getNextIndexBlockId();
-            node.setNodeBlockId((int) blockID);
-            indexBuffer.put(blockID, node);
-            result.put(node,(int) blockID);
+            long nextIndexBlockId = getNextIndexBlockId();
+            node.setNodeBlockId((int) nextIndexBlockId);
+            indexBuffer.put(nextIndexBlockId, node);
+            result.put(node,(int) nextIndexBlockId);
         }
         return result;
     }
